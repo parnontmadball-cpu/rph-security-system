@@ -18,6 +18,7 @@
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNnc2p1dXZ4bGx6YmFicWFvZHBtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc0MTQzNTAsImV4cCI6MjEwMjk5MDM1MH0.fON-1FNwUMNr7NgQW75hf8SYHJ78gE7_lJizokmT8kg'; // 🔧 แก้ตรงนี้
   const EMAIL_DOMAIN = 'rph.internal'; // ใช้แปลง username -> อีเมลปลอมสำหรับ Supabase Auth
   const STORAGE_BUCKET = 'report-images';
+  const EDGE_FUNCTION_URL = SUPABASE_URL + '/functions/v1/admin-api';
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
@@ -241,6 +242,21 @@ select{appearance:none; background-image:url("data:image/svg+xml;utf8,<svg xmlns
 .rte-resize-hint{font-size:11px;color:var(--text-mute);margin-top:4px;text-align:left;}
 
 /* ============================================================
+   REPORT FORM REDESIGN (เฟส 2)
+   ============================================================ */
+.form-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:0 14px;}
+@media(max-width:480px){.form-grid-2{grid-template-columns:1fr;}}
+.rte-editable-lg{min-height:180px;font-size:16px;line-height:1.75;}
+.sticky-save-bar{
+  position:fixed;left:0;right:0;bottom:0;z-index:45;background:var(--surface);
+  border-top:1px solid var(--border);padding:10px 16px calc(10px + env(safe-area-inset-bottom));
+  display:flex;gap:10px;box-shadow:0 -4px 16px rgba(0,0,0,.08);
+}
+.rte-editable.rte-fullscreen{
+  position:fixed;inset:0;z-index:400;max-height:none;min-height:0;border-radius:0;
+  padding:20px;font-size:18px;line-height:1.9;border:none;
+}
+/* ============================================================
    REPORT LIST / FILTERS / CARDS / PRINT (เพิ่มใน Part 3)
    ============================================================ */
 .filter-bar{display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin-bottom:14px;}
@@ -400,60 +416,57 @@ table.data-table td{padding:9px 6px; border-bottom:1px solid var(--border); vert
   <div class="view hidden" id="view-reportForm">
     <div class="topbar">
       <button class="back-btn" onclick="Report.cancel()">←</button>
-      <h1>บันทึกรายงาน</h1>
+      <h1 id="reportFormTitle">บันทึกรายงาน</h1>
     </div>
-    <main class="view">
+    <main class="view" style="padding-bottom:110px;">
       <div class="card">
-        <div class="field">
-          <label>วันที่</label>
-          <input type="date" id="rf_date">
+        <div class="section-title">ข้อมูลพื้นฐาน</div>
+        <div class="form-grid-2">
+          <div class="field"><label>วันที่</label><input type="date" id="rf_date"></div>
+          <div class="field"><label>กะการทำงาน</label><select id="rf_shift"></select></div>
+          <div class="field"><label>สถานที่</label><select id="rf_location"></select></div>
+          <div class="field"><label>ประเภทเหตุการณ์</label><select id="rf_type"></select></div>
         </div>
-        <div class="field">
-          <label>กะการทำงาน</label>
-          <select id="rf_shift"></select>
-        </div>
-        <div class="field">
-          <label>ชื่อเจ้าหน้าที่</label>
-          <input type="text" id="rf_officer" disabled>
-        </div>
-        <div class="field">
-          <label>สถานที่</label>
-          <select id="rf_location"></select>
-        </div>
-        <div class="field">
-          <label>ประเภทเหตุการณ์</label>
-          <select id="rf_type"></select>
-        </div>
-        <div class="field">
-          <label>รายละเอียดเหตุการณ์</label>
-          <div class="chip-list" id="rf_desc_quick" style="margin-bottom:10px;"></div>
-          <div class="rte-toolbar" data-target="rf_desc"></div>
-          <div id="rf_desc" class="rte-editable" contenteditable="true" data-placeholder="อธิบายเหตุการณ์ที่พบ..."></div>
-          <p class="rte-resize-hint">ลากมุมล่างขวาของกล่องเพื่อขยาย/ย่อขนาดช่องพิมพ์ได้</p>
-        </div>
-        <div class="field">
-          <label>การดำเนินการ / แก้ไข</label>
-          <div class="chip-list" id="rf_action_quick" style="margin-bottom:10px;"></div>
-          <div class="rte-toolbar" data-target="rf_action"></div>
-          <div id="rf_action" class="rte-editable" contenteditable="true" data-placeholder="สิ่งที่ได้ดำเนินการ..."></div>
-        </div>
-        <div class="field">
-          <label>รูปภาพประกอบ (สูงสุด 10 รูป)</label>
-          <div class="upload-row">
-            <button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById('rf_cameraInput').click()">📷 ถ่ายรูป</button>
-            <button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById('rf_galleryInput').click()">🖼️ เลือกจากอัลบั้ม</button>
-            <input type="file" id="rf_cameraInput" accept="image/*" capture="environment" class="hidden" onchange="ImgUp.handleFiles(this.files); this.value='';">
-            <input type="file" id="rf_galleryInput" accept="image/*" multiple class="hidden" onchange="ImgUp.handleFiles(this.files); this.value='';">
-          </div>
-          <div class="img-grid" id="rf_images"></div>
-          <p class="hint">รูปจะถูกย่อขนาดและอัปโหลดให้อัตโนมัติก่อนบันทึก</p>
-        </div>
+        <div class="field" style="margin-bottom:0;"><label>ชื่อเจ้าหน้าที่</label><input type="text" id="rf_officer" disabled></div>
       </div>
-      <div class="btn-grid">
-        <button class="btn btn-primary" id="rf_saveBtn" onclick="Report.save()">บันทึกรายงาน</button>
-        <button class="btn btn-ghost" onclick="Report.cancel()">ยกเลิก</button>
+
+      <div class="card">
+        <div class="row-between" style="margin-bottom:2px;">
+          <div class="section-title" style="margin:0;">รายละเอียดเหตุการณ์</div>
+          <button type="button" class="btn btn-outline btn-sm" onclick="RTE.toggleFullscreen('rf_desc')">⛶ ขยายเต็มจอ</button>
+        </div>
+        <div class="chip-list" id="rf_desc_quick" style="margin-bottom:10px;"></div>
+        <div class="rte-toolbar" data-target="rf_desc"></div>
+        <div id="rf_desc" class="rte-editable rte-editable-lg" contenteditable="true" data-placeholder="อธิบายเหตุการณ์ที่พบ..."></div>
+        <p class="rte-resize-hint">ลากมุมล่างขวาเพื่อขยาย/ย่อ หรือกด "ขยายเต็มจอ" เพื่อพิมพ์แบบเต็มหน้าจอ</p>
+      </div>
+
+      <div class="card">
+        <div class="row-between" style="margin-bottom:2px;">
+          <div class="section-title" style="margin:0;">การดำเนินการ / แก้ไข</div>
+          <button type="button" class="btn btn-outline btn-sm" onclick="RTE.toggleFullscreen('rf_action')">⛶ ขยายเต็มจอ</button>
+        </div>
+        <div class="chip-list" id="rf_action_quick" style="margin-bottom:10px;"></div>
+        <div class="rte-toolbar" data-target="rf_action"></div>
+        <div id="rf_action" class="rte-editable rte-editable-lg" contenteditable="true" data-placeholder="สิ่งที่ได้ดำเนินการ..."></div>
+      </div>
+
+      <div class="card">
+        <div class="section-title">รูปภาพประกอบ (สูงสุด 10 รูป)</div>
+        <div class="upload-row">
+          <button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById('rf_cameraInput').click()">📷 ถ่ายรูป</button>
+          <button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById('rf_galleryInput').click()">🖼️ เลือกจากอัลบั้ม</button>
+          <input type="file" id="rf_cameraInput" accept="image/*" capture="environment" class="hidden" onchange="ImgUp.handleFiles(this.files); this.value='';">
+          <input type="file" id="rf_galleryInput" accept="image/*" multiple class="hidden" onchange="ImgUp.handleFiles(this.files); this.value='';">
+        </div>
+        <div class="img-grid" id="rf_images"></div>
+        <p class="hint">รูปจะถูกย่อขนาดและอัปโหลดให้อัตโนมัติก่อนบันทึก</p>
       </div>
     </main>
+    <div class="sticky-save-bar no-print">
+      <button class="btn btn-ghost" onclick="Report.cancel()">ยกเลิก</button>
+      <button class="btn btn-primary" id="rf_saveBtn" onclick="Report.save()" style="flex:1;">✅ บันทึกรายงาน</button>
+    </div>
   </div>
 
   <!-- ===================== REPORT LIST ===================== -->
@@ -470,11 +483,13 @@ table.data-table td{padding:9px 6px; border-bottom:1px solid var(--border); vert
           <input type="date" id="fl_from" title="จากวันที่">
           <input type="date" id="fl_to" title="ถึงวันที่">
           <select id="fl_shift"><option value="">ทุกกะ</option></select>
-          <select id="fl_status">
-            <option value="">ทุกสถานะ</option>
-            <option value="submitted">ส่งแล้ว (ยังไม่อีเมล)</option>
-            <option value="sent">ส่งอีเมลแล้ว</option>
-          </select>
+          <div id="fl_status_wrap">
+            <select id="fl_status">
+              <option value="">ทุกสถานะ</option>
+              <option value="submitted">🕐 รอตรวจสอบ (ยังไม่ส่งอีเมลจริง)</option>
+              <option value="sent">ส่งอีเมลแล้ว</option>
+            </select>
+          </div>
           <select id="fl_location"><option value="">ทุกสถานที่</option></select>
           <select id="fl_type"><option value="">ทุกประเภทเหตุการณ์</option></select>
         </div>
@@ -513,7 +528,7 @@ table.data-table td{padding:9px 6px; border-bottom:1px solid var(--border); vert
       <div class="print-sheet" id="printSheet"></div>
       <div class="btn-grid no-print" style="margin-top:16px;">
         <button class="btn btn-primary" onclick="window.print()">🖨️ พิมพ์</button>
-        <button class="btn btn-success" onclick="PrintView.sendEmail()">✉️ ส่ง Email</button>
+        <button class="btn btn-success hidden" id="printEmailBtn" onclick="PrintView.sendEmail()">✉️ ส่งอีเมลจริง</button>
       </div>
     </main>
   </div>
@@ -637,6 +652,30 @@ const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 function usernameToEmail(username){
   return String(username || '').trim().toLowerCase().replace(/[^a-z0-9._-]/g,'') + '@' + EMAIL_DOMAIN;
+}
+
+/* ================================================================
+   เรียก Edge Function "admin-api" (สร้าง/ลบ/รีเซ็ตรหัสผู้ใช้ + ส่งอีเมลจริง)
+   ต้องแนบ access token ของผู้ใช้ที่ login อยู่ตอนนี้ไปด้วยเสมอ เพื่อให้
+   ฝั่ง Edge Function ตรวจสอบได้ว่าเป็น admin จริงก่อนทำงาน
+================================================================ */
+async function callAdminApi(action, payload){
+  const { data: { session } } = await sb.auth.getSession();
+  if(!session){ return { success:false, error:'กรุณาเข้าสู่ระบบใหม่' }; }
+  try {
+    const res = await fetch(EDGE_FUNCTION_URL, {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + session.access_token,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ action, ...payload })
+    });
+    const json = await res.json();
+    return json;
+  } catch(e){
+    return { success:false, error: 'เชื่อมต่อ Edge Function ไม่สำเร็จ: ' + e.message };
+  }
 }
 
 /* ================================================================
@@ -961,6 +1000,28 @@ const RTE = {
     el.focus();
     try { document.execCommand('removeFormat', false, null); } catch(e){}
   },
+  toggleFullscreen(targetId){
+    const el = document.getElementById(targetId);
+    if(!el) return;
+    const isFs = el.classList.contains('rte-fullscreen');
+    if(isFs){
+      el.classList.remove('rte-fullscreen');
+      document.body.style.overflow = '';
+      const btn = document.getElementById(targetId + '_fsClose');
+      if(btn) btn.remove();
+    } else {
+      el.classList.add('rte-fullscreen');
+      document.body.style.overflow = 'hidden';
+      const btn = document.createElement('button');
+      btn.id = targetId + '_fsClose';
+      btn.textContent = '✕ ปิดเต็มจอ';
+      btn.className = 'btn btn-primary btn-sm';
+      btn.style.cssText = 'position:fixed;top:14px;right:14px;z-index:401;';
+      btn.onclick = () => RTE.toggleFullscreen(targetId);
+      document.body.appendChild(btn);
+      el.focus();
+    }
+  },
   handlePaste(e, targetId){
     e.preventDefault();
     const cd = e.clipboardData || window.clipboardData;
@@ -1150,6 +1211,7 @@ const Report = {
   editingId: null,
   openNew(){
     this.editingId = null;
+    document.getElementById('reportFormTitle').textContent = 'บันทึกรายงาน';
     document.getElementById('rf_date').value = Dashboard.todayStr();
     Filters.populateReportForm();
     document.getElementById('rf_shift').value = Dashboard.currentShiftLabel();
@@ -1166,6 +1228,7 @@ const Report = {
   },
   openEdit(report){
     this.editingId = report.id;
+    document.getElementById('reportFormTitle').textContent = 'แก้ไขรายงาน';
     Filters.populateReportForm();
     document.getElementById('rf_date').value = report.date;
     document.getElementById('rf_shift').value = report.shift;
@@ -1272,6 +1335,9 @@ const ReportList = {
     Filters.fillSelect('fl_location', (App.config && App.config.locations) || [], true, 'ทุกสถานที่');
     Filters.fillSelect('fl_type', (App.config && App.config.incident_types) || [], true, 'ทุกประเภทเหตุการณ์');
     document.getElementById('exportBtn').classList.toggle('hidden', App.user.role !== 'admin');
+    // ✅ รปภ. ไม่ต้องเห็นตัวกรองสถานะ (รอตรวจสอบ/ส่งแล้ว) เพราะไม่ใช่เรื่องที่ต้องกังวล — เป็นหน้าที่ Admin
+    document.getElementById('fl_status_wrap').classList.toggle('hidden', App.user.role !== 'admin');
+    if(App.user.role !== 'admin') document.getElementById('fl_status').value = '';
 
     this.clearSelection();
     const box = document.getElementById('reportListBox');
@@ -1328,6 +1394,7 @@ const ReportList = {
       return;
     }
     box.innerHTML = '';
+    const isAdmin = App.user.role === 'admin';
     this.all.forEach(r => {
       const plainDesc = stripHtml(r.description || '');
       const isSent = r.status === 'sent';
@@ -1335,13 +1402,18 @@ const ReportList = {
       const card = document.createElement('div');
       card.className = 'report-card ' + (isSent ? 'stripe-sent' : 'stripe-submitted');
       card.dataset.id = r.id;
+      // ✅ รปภ. เห็นทุกอย่างที่ตัวเองส่งเป็น "ส่งแล้ว" เสมอ ส่วน Admin เห็นสถานะจริง
+      // (submitted = รอ Admin ตรวจสอบ/ส่งจริง, sent = ส่งอีเมลจริงแล้ว)
+      const badgeHtml = isAdmin
+        ? `<span class="badge badge-${isSent?'sent':'submitted'}">${isSent?'✔ ส่งอีเมลแล้ว':'🕐 รอตรวจสอบ'}</span>`
+        : `<span class="badge badge-sent">✔ ส่งแล้ว</span>`;
       card.innerHTML = `
         <div class="stripe"></div>
         <div class="rc-body">
           <div class="top">
             <div class="top-left">
-              <input type="checkbox" class="rl-check rl-item-check" data-id="${r.id}"
-                onclick="event.stopPropagation();ReportList.toggleSelect('${r.id}', this.checked)">
+              ${isAdmin ? `<input type="checkbox" class="rl-check rl-item-check" data-id="${r.id}"
+                onclick="event.stopPropagation();ReportList.toggleSelect('${r.id}', this.checked)">` : ''}
               <div style="min-width:0;">
                 <div class="type-title">${this.typeIcon(r.incident_type)} ${UI.esc(r.incident_type || 'ไม่ระบุประเภท')}</div>
                 <div class="meta">
@@ -1352,7 +1424,7 @@ const ReportList = {
                 </div>
               </div>
             </div>
-            <span class="badge badge-${isSent?'sent':'submitted'}">${isSent?'✔ ส่งอีเมลแล้ว':'⏳ รอส่ง'}</span>
+            ${badgeHtml}
           </div>
           <div class="desc">${UI.esc(plainDesc || 'ไม่มีรายละเอียดเพิ่มเติม')}</div>
           ${imgCount>0 ? `<div class="rc-imgcount">🖼️ แนบรูปภาพ ${imgCount} รูป</div>` : ''}
@@ -1382,13 +1454,15 @@ const ReportList = {
   updateBulkBar(){
     const bar = document.getElementById('rl_bulkBar');
     document.getElementById('rl_selectedCount').textContent = 'เลือก ' + this.selected.size + ' รายการ';
-    bar.style.display = this.all.length ? 'block' : 'none';
+    // ✅ แถบเลือกหลายรายการ (สำหรับส่งอีเมลจริง/ลบ) เป็นเครื่องมือของ Admin เท่านั้น
+    bar.style.display = (this.all.length && App.user.role === 'admin') ? 'block' : 'none';
     document.getElementById('rl_bulkDeleteBtn').classList.toggle('hidden', App.user.role !== 'admin');
   },
 
   openDetail(r){
     window._RC = window._RC || {}; window._RC[r.id] = r;
     const canEdit = App.user.role === 'admin' || r.officer_id === App.user.id;
+    const isAdmin = App.user.role === 'admin';
     const imgs = (r.image_urls||[]).map(p => `<img src="${storagePathToPublicUrl(p)}" style="width:90px;height:90px;object-fit:cover;border-radius:8px;margin:3px;">`).join('');
     document.getElementById('modalRoot').innerHTML = `
       <div class="modal-bg"><div class="modal">
@@ -1404,8 +1478,8 @@ const ReportList = {
         <div class="btn-grid" style="margin-top:18px;">
           ${canEdit ? `<button class="btn btn-outline" onclick="UI.closeModal();Report.openEdit(window._RC['${r.id}'])">✏️ แก้ไข</button>` : '<div></div>'}
           <button class="btn btn-ghost" onclick="UI.closeModal();PrintView.openSingle(window._RC['${r.id}'])">🖨️ พิมพ์</button>
-          <button class="btn btn-success" onclick="ReportList.sendMail('${r.id}')">✉️ ส่ง Email</button>
-          ${App.user.role==='admin' ? `<button class="btn btn-danger" onclick="ReportList.remove('${r.id}')">🗑️ ลบ</button>` : '<div></div>'}
+          ${isAdmin ? `<button class="btn btn-success" onclick="ReportList.sendMail('${r.id}')">✉️ ส่งอีเมลจริง</button>` : '<div></div>'}
+          ${isAdmin ? `<button class="btn btn-danger" onclick="ReportList.remove('${r.id}')">🗑️ ลบ</button>` : '<div></div>'}
         </div>
       </div></div>`;
   },
@@ -1468,6 +1542,7 @@ const PrintView = {
   payload: null,
   openSingle(r){
     this.payload = r;
+    document.getElementById('printEmailBtn').classList.toggle('hidden', App.user.role !== 'admin');
     const org = (App.config && App.config.org_name) || 'หน่วยงานรักษาความปลอดภัย';
     const imgs = (r.image_urls||[]).map(p => `<img src="${storagePathToPublicUrl(p)}">`).join('');
     const head = `<div class="print-head"><div><h2>🛡️ ${UI.esc(org)}</h2><p style="color:#6b7280;font-size:13px;">ระบบรายงานเจ้าหน้าที่รักษาความปลอดภัย</p></div>
@@ -1493,19 +1568,37 @@ const PrintView = {
 };
 
 /* ================================================================
-   EMAIL SERVICE — ⚠️ Placeholder ชั่วคราว
-   ──────────────────────────────────────────────────────────────
-   Postgres/Browser ส่งอีเมลพร้อมไฟล์ PDF แนบเองไม่ได้ ต้องพึ่ง
-   Supabase Edge Function ที่จะสร้างในขั้นตอนถัดไป (ใช้ Resend
-   ตามที่ตกลงกันไว้) ตอนนี้ปุ่ม "ส่ง Email" จะแค่แจ้งเตือนไปก่อน
-   เพื่อไม่ให้ผู้ใช้กดแล้วเข้าใจผิดว่าอีเมลถูกส่งจริง
+   EMAIL SERVICE — เรียก Edge Function "admin-api" (action: send_report_email)
+   เฉพาะ Admin เท่านั้นที่มีปุ่มนี้ในหน้า UI (ดูการซ่อนปุ่มในเฟส 2)
+   แต่ตัว Edge Function เองก็เช็คสิทธิ์ admin ซ้ำอีกชั้นอยู่ดี กันกรณี
+   มีใครพยายามยิง request ตรงมาโดยไม่ผ่านหน้าเว็บ
 ================================================================ */
 const EmailService = {
-  sendReport(reportId){
-    UI.toast('ระบบส่งอีเมลยังไม่ได้ตั้งค่า — จะพร้อมใช้งานหลังสร้าง Edge Function ในขั้นตอนถัดไป', 'info');
+  async sendReport(reportId){
+    const to = prompt('ส่งถึงอีเมล (เว้นว่างเพื่อใช้อีเมลที่ตั้งค่าไว้):', '');
+    if(to === null) return;
+    UI.showLoading(true);
+    const res = await callAdminApi('send_report_email', { report_id: reportId, recipient_email: to || undefined });
+    UI.showLoading(false);
+    if(!res.success){ UI.toast('ส่งอีเมลไม่สำเร็จ: ' + res.error, 'err'); return; }
+    UI.toast('ส่งอีเมลสำเร็จ', 'ok');
+    UI.closeModal();
+    if(Router.current === 'reportList') ReportList.load();
+    if(Router.current === 'printPreview') Router.go('reportList');
   },
-  sendReports(reportIds){
-    UI.toast('ระบบส่งอีเมลยังไม่ได้ตั้งค่า — จะพร้อมใช้งานหลังสร้าง Edge Function ในขั้นตอนถัดไป', 'info');
+  async sendReports(reportIds){
+    const to = prompt('ส่งถึงอีเมล (เว้นว่างเพื่อใช้อีเมลที่ตั้งค่าไว้):', '');
+    if(to === null) return;
+    UI.showLoading(true);
+    let okCount = 0, errCount = 0, lastErr = '';
+    for(const id of reportIds){
+      const res = await callAdminApi('send_report_email', { report_id: id, recipient_email: to || undefined });
+      if(res.success) okCount++; else { errCount++; lastErr = res.error; }
+    }
+    UI.showLoading(false);
+    if(errCount === 0) UI.toast('ส่งอีเมลสำเร็จทั้งหมด ' + okCount + ' ฉบับ', 'ok');
+    else UI.toast('ส่งสำเร็จ ' + okCount + ' ฉบับ, ล้มเหลว ' + errCount + ' ฉบับ (' + lastErr + ')', 'err');
+    ReportList.load();
   }
 };
 
@@ -1551,21 +1644,22 @@ const Users = {
     this.pendingAvatar = null;
     document.getElementById('modalRoot').innerHTML = `<div class="modal-bg"><div class="modal">
       <div class="modal-head"><h3>${isEdit?'แก้ไขผู้ใช้':'เพิ่มผู้ใช้ใหม่'}</h3><button class="modal-close" onclick="UI.closeModal()">✕</button></div>
-      ${!isEdit ? `<div class="card" style="background:var(--amber-bg);color:var(--amber);font-size:13px;margin-bottom:14px;">
-        ⚠️ ยังเปิดใช้งานไม่ได้ในตอนนี้ ต้องรอ Edge Function สำหรับสร้างผู้ใช้ในขั้นตอนถัดไป
-      </div>` : `
+      ${!isEdit ? '' : `
       <div class="field" style="text-align:center;">
         <div class="avatar-thumb" id="uf_avatarPreview" style="width:72px;height:72px;font-size:24px;margin:0 auto 8px;">${u.avatar_url ? `<img src="${u.avatar_url}">` : UI.esc((u.fullname||'?').trim().charAt(0))}</div>
         <button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById('uf_avatarInput').click()">📷 เปลี่ยนรูปโปรไฟล์</button>
         <input type="file" id="uf_avatarInput" accept="image/*" class="hidden" onchange="Users.pickAvatar(this.files[0])">
       </div>`}
-      <div class="field"><label>ชื่อผู้ใช้</label><input type="text" id="uf_username" value="${isEdit?UI.esc(u.username):''}" disabled></div>
+      <div class="field"><label>ชื่อผู้ใช้ (ภาษาอังกฤษ/ตัวเลข ไม่มีเว้นวรรค)</label><input type="text" id="uf_username" value="${isEdit?UI.esc(u.username):''}" ${isEdit?'disabled':''}></div>
+      ${!isEdit ? `
+      <div class="field"><label>รหัสผ่าน (อย่างน้อย 6 ตัวอักษร)</label><input type="password" id="uf_password"></div>
+      <div class="field"><label>ยืนยันรหัสผ่าน</label><input type="password" id="uf_password2"></div>` : ''}
       <div class="field"><label>ชื่อ-นามสกุล</label><input type="text" id="uf_fullname" value="${isEdit?UI.esc(u.fullname):''}"></div>
       <div class="field"><label>ตำแหน่ง</label><input type="text" id="uf_position" value="${isEdit?UI.esc(u.position||''):''}"></div>
       <div class="field"><label>บทบาท</label><select id="uf_role">
         <option value="officer" ${isEdit&&u.role==='officer'?'selected':''}>เจ้าหน้าที่ รปภ.</option>
         <option value="admin" ${isEdit&&u.role==='admin'?'selected':''}>ผู้ดูแลระบบ</option></select></div>
-      <button class="btn btn-primary btn-block" onclick="Users.submit(${isEdit?`'${u.id}'`:'null'})" ${!isEdit?'disabled':''}>บันทึก</button>
+      <button class="btn btn-primary btn-block" id="uf_submitBtn" onclick="Users.submit(${isEdit?`'${u.id}'`:'null'})">บันทึก</button>
     </div></div>`;
   },
   pickAvatar(file){
@@ -1589,13 +1683,35 @@ const Users = {
     reader.readAsDataURL(file);
   },
   async submit(userId){
-    if(!userId){ UI.toast('การเพิ่มผู้ใช้ใหม่ยังไม่พร้อมใช้งาน', 'err'); return; }
     const fullname = document.getElementById('uf_fullname').value.trim();
     const position = document.getElementById('uf_position').value.trim();
     const role = document.getElementById('uf_role').value;
     if(!fullname){ UI.toast('กรุณากรอกชื่อ-นามสกุล','err'); return; }
-    UI.showLoading(true);
 
+    const btn = document.getElementById('uf_submitBtn');
+    btn.disabled = true;
+
+    if(!userId){
+      // ── สร้างผู้ใช้ใหม่ ผ่าน Edge Function (ต้องใช้ service_role) ──
+      const username = document.getElementById('uf_username').value.trim();
+      const pw = document.getElementById('uf_password').value;
+      const pw2 = document.getElementById('uf_password2').value;
+      if(!username){ btn.disabled=false; UI.toast('กรุณากรอกชื่อผู้ใช้','err'); return; }
+      if(pw !== pw2){ btn.disabled=false; UI.toast('รหัสผ่านไม่ตรงกัน','err'); return; }
+      if(pw.length < 6){ btn.disabled=false; UI.toast('รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร','err'); return; }
+
+      UI.showLoading(true);
+      const res = await callAdminApi('create_user', { username, password: pw, fullname, position, role });
+      UI.showLoading(false);
+      btn.disabled = false;
+      if(!res.success){ UI.toast('เพิ่มผู้ใช้ไม่สำเร็จ: ' + res.error, 'err'); return; }
+      UI.toast('เพิ่มผู้ใช้สำเร็จ','ok');
+      UI.closeModal();
+      this.load();
+      return;
+    }
+
+    // ── แก้ไขผู้ใช้เดิม (ทำตรงผ่าน RLS ได้เลย ไม่ต้องพึ่ง Edge Function) ──
     const updates = { fullname, position, role };
     if(this.pendingAvatar){
       try {
@@ -1606,14 +1722,16 @@ const Users = {
         const { data: pub } = sb.storage.from('avatars').getPublicUrl(path);
         updates.avatar_url = pub.publicUrl;
       } catch(e){
-        UI.showLoading(false);
+        btn.disabled = false;
         UI.toast('อัปโหลดรูปโปรไฟล์ไม่สำเร็จ: ' + e.message, 'err');
         return;
       }
     }
 
+    UI.showLoading(true);
     const { error } = await sb.from('profiles').update(updates).eq('id', userId);
     UI.showLoading(false);
+    btn.disabled = false;
     if(error){ UI.toast('แก้ไขไม่สำเร็จ: ' + error.message, 'err'); return; }
     UI.toast('แก้ไขผู้ใช้สำเร็จ','ok');
     UI.closeModal();
@@ -1624,7 +1742,15 @@ const Users = {
     }
   },
   resetPw(id){
-    UI.toast('การรีเซ็ตรหัสผ่านยังไม่พร้อมใช้งาน — จะเปิดใช้งานพร้อม Edge Function ในขั้นตอนถัดไป', 'info');
+    const pw = prompt('กำหนดรหัสผ่านใหม่ (อย่างน้อย 6 ตัวอักษร):');
+    if(!pw) return;
+    if(pw.length < 6){ UI.toast('รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร','err'); return; }
+    UI.showLoading(true);
+    callAdminApi('reset_password', { user_id: id, new_password: pw }).then(res => {
+      UI.showLoading(false);
+      if(!res.success){ UI.toast('รีเซ็ตรหัสผ่านไม่สำเร็จ: ' + res.error, 'err'); return; }
+      UI.toast('รีเซ็ตรหัสผ่านสำเร็จ','ok');
+    });
   },
   async toggle(id, currentStatus){
     if(id === App.user.id){ UI.toast('ไม่สามารถเปลี่ยนสถานะบัญชีตัวเองได้','err'); return; }
@@ -1637,7 +1763,14 @@ const Users = {
   },
   remove(id){
     if(id === App.user.id){ UI.toast('ไม่สามารถลบบัญชีตัวเองได้','err'); return; }
-    UI.toast('การลบผู้ใช้ยังไม่พร้อมใช้งาน — จะเปิดใช้งานพร้อม Edge Function ในขั้นตอนถัดไป (ตอนนี้ใช้ "ระงับ" แทนไปก่อนได้)', 'info');
+    if(!confirm('ต้องการลบผู้ใช้นี้ใช่หรือไม่? การลบไม่สามารถย้อนกลับได้ และรายงานเก่าของผู้ใช้นี้จะยังอยู่ในระบบ')) return;
+    UI.showLoading(true);
+    callAdminApi('delete_user', { user_id: id }).then(res => {
+      UI.showLoading(false);
+      if(!res.success){ UI.toast('ลบผู้ใช้ไม่สำเร็จ: ' + res.error, 'err'); return; }
+      UI.toast('ลบผู้ใช้สำเร็จ','ok');
+      this.load();
+    });
   }
 };
 
