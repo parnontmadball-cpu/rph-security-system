@@ -6,7 +6,7 @@
 <title>ระบบรายงาน รปภ.</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700;800&display=swap" rel="stylesheet">
- 
+
 <!--
   ═══════════════════════════════════════════════════════════════
   ⚙️ CONFIG — แก้ 2 ค่านี้ให้เป็นของคุณเองก่อน deploy
@@ -14,8 +14,8 @@
   ═══════════════════════════════════════════════════════════════
 -->
 <script>
-  const SUPABASE_URL = 'https://cgsjuuvxllzbabqaodpm.supabase.co'; // 🔧 แก้ตรงนี้
-  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNnc2p1dXZ4bGx6YmFicWFvZHBtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc0MTQzNTAsImV4cCI6MjEwMjk5MDM1MH0.fON-1FNwUMNr7NgQW75hf8SYHJ78gE7_lJizokmT8kg'; // 🔧 แก้ตรงนี้
+  const SUPABASE_URL = 'https://xxxxxxxxxxxx.sb.co'; // 🔧 แก้ตรงนี้
+  const SUPABASE_ANON_KEY = 'eyJxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'; // 🔧 แก้ตรงนี้
   const EMAIL_DOMAIN = 'rph.internal'; // ใช้แปลง username -> อีเมลปลอมสำหรับ Supabase Auth
   const STORAGE_BUCKET = 'report-images';
 </script>
@@ -26,18 +26,18 @@
    THEME TOKENS (เหมือนของเดิมทุกประการ)
    ============================================================ */
 :root{
-  --navy:#0f2750; --blue:#1e3a8a; --accent:#2563eb; --accent-2:#3b82f6;
+  --navy:#0b3d3a; --blue:#0f766e; --accent:#0d9488; --accent-2:#14b8a6;
   --green:#16a34a; --green-bg:#dcfce7; --red:#dc2626; --red-bg:#fee2e2;
   --amber:#d97706; --amber-bg:#fef3c7;
-  --bg:#eef2f8; --surface:#ffffff; --surface-2:#f6f8fb; --surface-3:#eef1f6;
-  --text:#16213a; --text-mute:#64748b; --border:#e1e7f0;
+  --bg:#eef6f5; --surface:#ffffff; --surface-2:#f4faf9; --surface-3:#e9f4f2;
+  --text:#122e2b; --text-mute:#5c7a76; --border:#d9ece9;
   --radius:14px; --radius-sm:10px;
-  --shadow:0 2px 10px rgba(15,39,80,.07), 0 1px 2px rgba(15,39,80,.06);
-  --shadow-lg:0 12px 32px rgba(15,39,80,.16);
+  --shadow:0 2px 10px rgba(11,61,58,.08), 0 1px 2px rgba(11,61,58,.06);
+  --shadow-lg:0 12px 32px rgba(11,61,58,.18);
 }
 [data-theme="dark"]{
-  --bg:#1a1a2e; --surface:#23253f; --surface-2:#1f2138; --surface-3:#2b2e4d;
-  --text:#eceefb; --text-mute:#9499c0; --border:#34375c;
+  --bg:#0d1b19; --surface:#16302b; --surface-2:#122622; --surface-3:#1c3a34;
+  --text:#e6f5f2; --text-mute:#8bb3ac; --border:#25453f;
   --green-bg:#103820; --red-bg:#3a1a1f; --amber-bg:#3a2c10;
   --shadow:0 2px 10px rgba(0,0,0,.35); --shadow-lg:0 14px 36px rgba(0,0,0,.5);
 }
@@ -54,7 +54,7 @@ p{margin:0;}
 .hidden{display:none !important;}
 ::-webkit-scrollbar{width:8px;height:8px;}
 ::-webkit-scrollbar-thumb{background:var(--border);border-radius:8px;}
- 
+
 #app{min-height:100vh; display:flex; flex-direction:column;}
 .topbar{
   position:sticky; top:0; z-index:40; background:var(--navy); color:#fff;
@@ -67,10 +67,10 @@ p{margin:0;}
   color:#fff;font-size:18px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;
 }
 .topbar .icon-btn:active{background:rgba(255,255,255,.25);}
- 
+
 main.view{flex:1; padding:16px; padding-bottom:90px; max-width:920px; width:100%; margin:0 auto; animation:fadein .18s ease;}
 @keyframes fadein{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:none;}}
- 
+
 .bottom-nav{
   position:fixed; left:0; right:0; bottom:0; z-index:40; display:none;
   background:var(--surface); border-top:1px solid var(--border);
@@ -89,14 +89,14 @@ main.view{flex:1; padding:16px; padding-bottom:90px; max-width:920px; width:100%
   .bottom-nav{display:block;}
   main.view{padding-bottom:96px;}
 }
- 
+
 .card{
   background:var(--surface); border-radius:var(--radius); padding:18px;
   box-shadow:var(--shadow); border:1px solid var(--border); margin-bottom:14px;
 }
 .section-title{font-size:13px; color:var(--text-mute); font-weight:700; letter-spacing:.04em; margin:18px 0 10px; text-transform:uppercase;}
 .section-title:first-child{margin-top:0;}
- 
+
 .field{margin-bottom:14px;}
 .field label{display:block; font-size:13.5px; font-weight:600; color:var(--text-mute); margin-bottom:6px;}
 .field .hint{font-size:12px;color:var(--text-mute);margin-top:5px;}
@@ -106,7 +106,7 @@ input[type=text],input[type=password],input[type=date],input[type=time],input[ty
   outline:none; transition:border-color .15s;
 }
 input:focus,select:focus,textarea:focus{border-color:var(--accent);}
- 
+
 .btn{
   display:inline-flex; align-items:center; justify-content:center; gap:8px;
   min-height:46px; padding:0 20px; border-radius:var(--radius-sm); border:none;
@@ -122,7 +122,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);}
 .btn-ghost{background:var(--surface-3); color:var(--text);}
 .btn-outline{background:transparent; border:1.5px solid var(--border); color:var(--text);}
 .btn-sm{min-height:38px; padding:0 14px; font-size:13.5px;}
- 
+
 .btn-grid{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
 @media(max-width:480px){.btn-grid{grid-template-columns:1fr;}}
 .big-tile{
@@ -134,7 +134,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);}
 .big-tile .ic{font-size:30px;}
 .big-tile .tt{font-weight:700; font-size:15px;}
 .big-tile .sub{font-size:11.5px; color:var(--text-mute);}
- 
+
 .toast-wrap{position:fixed; left:0; right:0; bottom:88px; z-index:200; display:flex; flex-direction:column; align-items:center; gap:8px; pointer-events:none;}
 @media(min-width:768px){.toast-wrap{bottom:24px;}}
 .toast{
@@ -146,7 +146,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);}
 .toast.ok{background:var(--green);}
 .toast.err{background:var(--red);}
 .toast.info{background:var(--navy);}
- 
+
 #loadingOverlay{
   position:fixed; inset:0; background:rgba(10,14,30,.32); backdrop-filter:blur(1px);
   display:none; align-items:center; justify-content:center; z-index:500;
@@ -154,7 +154,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);}
 #loadingOverlay.show{display:flex;}
 .spinner{width:46px;height:46px;border-radius:50%;border:4px solid rgba(255,255,255,.35);border-top-color:#fff;animation:spin .7s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg);}}
- 
+
 .modal-bg{position:fixed; inset:0; background:rgba(10,14,30,.45); z-index:300; display:flex; align-items:flex-end; justify-content:center;}
 @media(min-width:640px){.modal-bg{align-items:center;}}
 .modal{
@@ -163,18 +163,28 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);}
 }
 @media(min-width:640px){.modal{border-radius:18px; margin:20px;}}
 @keyframes modalup{from{transform:translateY(24px);opacity:0;}to{transform:none;opacity:1;}}
- 
+
 .login-wrap{min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px; background:radial-gradient(circle at 30% 20%, var(--blue) 0%, var(--navy) 55%, #07142e 100%);}
 .login-card{background:var(--surface); border-radius:20px; padding:34px 26px; width:100%; max-width:380px; box-shadow:0 24px 60px rgba(0,0,0,.35);}
 .login-logo{width:64px;height:64px;border-radius:18px;background:linear-gradient(135deg,var(--navy),var(--blue));display:flex;align-items:center;justify-content:center;font-size:30px;margin:0 auto 14px;color:#fff;}
 .login-card h2{text-align:center;font-size:19px;margin-bottom:4px;}
 .login-card .sub{text-align:center;color:var(--text-mute);font-size:13px;margin-bottom:22px;}
 .login-err{background:var(--red-bg); color:var(--red); border-radius:10px; padding:10px 14px; font-size:13.5px; font-weight:600; margin-bottom:14px;}
- 
+
 .dash-head{display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:18px;}
 .dash-head h2{font-size:20px;}
 .dash-head .sub{color:var(--text-mute); font-size:13.5px; margin-top:3px;}
-.dash-avatar{width:46px;height:46px;border-radius:50%;background:var(--blue);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:17px;flex-shrink:0;}
+.dash-avatar{width:46px;height:46px;border-radius:50%;background:var(--blue);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:17px;flex-shrink:0;overflow:hidden;}
+.dash-avatar img, .avatar-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
+.avatar-thumb{width:38px;height:38px;border-radius:50%;background:var(--blue);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0;overflow:hidden;}
+
+/* ============================================================
+   CONTACTS (เบอร์โทรศัพท์ภายใน)
+   ============================================================ */
+.contact-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;box-shadow:var(--shadow);display:flex;justify-content:space-between;align-items:center;gap:10px;}
+.contact-card .name{font-weight:700;font-size:15px;}
+.contact-card .meta{font-size:12.5px;color:var(--text-mute);margin-top:2px;}
+.contact-card a.phone-link{color:var(--accent);font-weight:700;font-size:16px;text-decoration:none;white-space:nowrap;}
 .alert-pending{background:var(--amber-bg); color:var(--amber); border-radius:var(--radius); padding:14px 16px; margin-bottom:16px; font-size:13.5px; font-weight:600; display:flex; gap:10px; align-items:flex-start;}
 .stat-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:6px;}
 .stat-box{background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:14px 8px; text-align:center;}
@@ -182,7 +192,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);}
 .stat-box .l{font-size:11px; color:var(--text-mute); margin-top:2px;}
 .row-between{display:flex; align-items:center; justify-content:space-between; gap:10px;}
 .small-link{font-size:13px; color:var(--accent); cursor:pointer; font-weight:600; background:none; border:none; padding:0;}
- 
+
 /* ============================================================
    REPORT FORM / RTE / UPLOAD (เพิ่มใน Part 2)
    ============================================================ */
@@ -193,10 +203,10 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);}
 .back-btn:active{background:rgba(255,255,255,.25);}
 textarea{min-height:110px; resize:vertical; line-height:1.6; padding-top:12px;}
 select{appearance:none; background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='9'><path d='M1 1l6 6 6-6' stroke='%2364748b' stroke-width='2' fill='none'/></svg>"); background-repeat:no-repeat; background-position:right 14px center; padding-right:36px;}
- 
+
 .chip{display:inline-flex;align-items:center;gap:6px;background:var(--surface-3);border:1px solid var(--border);border-radius:20px;padding:6px 12px;font-size:13px;}
 .chip-list{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;}
- 
+
 .upload-row{display:flex; gap:10px; flex-wrap:wrap;}
 .img-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(86px,1fr)); gap:8px; margin-top:10px;}
 .img-thumb{position:relative; border-radius:10px; overflow:hidden; aspect-ratio:1; background:var(--surface-3); border:1px solid var(--border);}
@@ -204,7 +214,7 @@ select{appearance:none; background-image:url("data:image/svg+xml;utf8,<svg xmlns
 .img-thumb .rm{position:absolute; top:3px; right:3px; width:22px;height:22px;border-radius:50%;background:rgba(15,15,25,.7);color:#fff;border:none;font-size:13px;cursor:pointer;}
 .img-thumb .bar{position:absolute; left:0;right:0;bottom:0;height:4px;background:rgba(0,0,0,.25);}
 .img-thumb .bar i{display:block;height:100%;background:var(--accent);width:0%;transition:width .2s;}
- 
+
 /* RTE */
 .rte-toolbar{display:flex; align-items:center; gap:6px; margin-bottom:8px; flex-wrap:wrap;}
 .rte-btn{
@@ -229,18 +239,18 @@ select{appearance:none; background-image:url("data:image/svg+xml;utf8,<svg xmlns
 .rte-editable:focus{border-color:var(--accent);}
 .rte-editable:empty:before{content:attr(data-placeholder); color:var(--text-mute);}
 .rte-resize-hint{font-size:11px;color:var(--text-mute);margin-top:4px;text-align:left;}
- 
+
 /* ============================================================
    REPORT LIST / FILTERS / CARDS / PRINT (เพิ่มใน Part 3)
    ============================================================ */
 .filter-bar{display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin-bottom:14px;}
 @media(min-width:640px){.filter-bar{grid-template-columns:repeat(4,1fr);}}
 .filter-bar .full{grid-column:1/-1;}
- 
+
 .badge{display:inline-flex; align-items:center; padding:3px 10px; border-radius:20px; font-size:12px; font-weight:700;}
 .badge-submitted{background:var(--amber-bg); color:var(--amber);}
 .badge-sent{background:var(--green-bg); color:var(--green);}
- 
+
 .report-card{
   background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
   padding:0; margin-bottom:10px; box-shadow:var(--shadow); cursor:pointer;
@@ -260,7 +270,7 @@ select{appearance:none; background-image:url("data:image/svg+xml;utf8,<svg xmlns
 .report-card .rc-imgcount{font-size:11.5px; color:var(--text-mute); margin-top:6px;}
 .rl-check{width:19px;height:19px;flex-shrink:0;margin-top:2px;accent-color:var(--accent);cursor:pointer;}
 .bulk-bar{position:sticky; top:0; z-index:30; margin-bottom:14px;}
- 
+
 .empty-state{text-align:center; padding:50px 20px; color:var(--text-mute);}
 .empty-state .ic{font-size:40px; margin-bottom:10px;}
 .spaced{display:flex; flex-direction:column; gap:14px;}
@@ -270,7 +280,7 @@ select{appearance:none; background-image:url("data:image/svg+xml;utf8,<svg xmlns
 .print-row{display:flex; padding:7px 0; border-bottom:1px solid #e5e7eb; font-size:13.5px;}
 .print-row .l{width:140px; color:#6b7280; flex-shrink:0;}
 .rte-view{line-height:1.7;}
- 
+
 @media print{
   .topbar,.bottom-nav,.no-print{display:none !important;}
   body{background:#fff; color:#000;}
@@ -286,7 +296,7 @@ select{appearance:none; background-image:url("data:image/svg+xml;utf8,<svg xmlns
 .sign-row{display:flex; justify-content:space-between; margin-top:40px;}
 .sign-box{text-align:center; font-size:13px; color:#374151;}
 .sign-box .line{width:160px; border-bottom:1px solid #9ca3af; height:46px;}
- 
+
 /* ============================================================
    USERS / SETTINGS / LOGS (เพิ่มใน Part 4)
    ============================================================ */
@@ -300,7 +310,7 @@ table.data-table td{padding:9px 6px; border-bottom:1px solid var(--border); vert
 .chip-add{display:flex; gap:8px; margin-top:8px;}
 .chip-add input{flex:1;}
 .chip button{background:none;border:none;color:var(--red);cursor:pointer;font-weight:700;font-size:14px;padding:0;line-height:1;margin-left:4px;}
- 
+
 /* ============================================================
    BATCH UPLOAD: ใบผ่าน / เอกสารจัดส่งสินค้า (เพิ่มใน Part 5)
    ============================================================ */
@@ -312,11 +322,11 @@ table.data-table td{padding:9px 6px; border-bottom:1px solid var(--border); vert
 </style>
 </head>
 <body data-theme="light">
- 
+
 <div id="loadingOverlay"><div class="spinner"></div></div>
 <div id="toastWrap" class="toast-wrap"></div>
 <div id="modalRoot"></div>
- 
+
 <div id="app">
   <!-- ===================== LOGIN ===================== -->
   <div class="view" id="view-login">
@@ -343,7 +353,7 @@ table.data-table td{padding:9px 6px; border-bottom:1px solid var(--border); vert
       </div>
     </div>
   </div>
- 
+
   <!-- ===================== DASHBOARD ===================== -->
   <div class="view hidden" id="view-dashboard">
     <div class="topbar">
@@ -359,27 +369,22 @@ table.data-table td{padding:9px 6px; border-bottom:1px solid var(--border); vert
         </div>
         <div class="dash-avatar" id="dashAvatar">A</div>
       </div>
- 
+
       <div id="pendingAlert" class="alert-pending hidden">
         <span>⚠️</span><span id="pendingAlertText"></span>
       </div>
- 
+
       <div class="stat-grid" id="statGrid"></div>
       <div id="statExtra"></div>
- 
+
       <div class="section-title">เมนูหลัก</div>
       <div class="btn-grid">
         <div class="big-tile" onclick="Report.openNew()"><span class="ic">📝</span><span class="tt">บันทึกรายงาน</span><span class="sub">สร้างรายงานใหม่</span></div>
         <div class="big-tile" onclick="Router.go('reportList')"><span class="ic">📋</span><span class="tt">รายการรายงาน</span><span class="sub">ดู / แก้ไข / ส่งอีเมล</span></div>
-        <div class="big-tile" onclick="Router.go('passUpload')" style="border:2px solid var(--accent);">
-          <span class="ic">🪪</span><span class="tt" style="color:var(--accent);">บันทึกใบผ่าน</span><span class="sub">ถ่ายรูป 100-200 ใบ/วัน</span>
-        </div>
-        <div class="big-tile" onclick="Router.go('deliveryUpload')" style="border:2px solid var(--green);">
-          <span class="ic">🚚</span><span class="tt" style="color:var(--green);">บันทึกการจัดส่งสินค้า</span><span class="sub">ถ่ายรูปเอกสารควบคุมการจัดส่ง</span>
-        </div>
+        <div class="big-tile" onclick="Router.go('contacts')"><span class="ic">📞</span><span class="tt">เบอร์โทรศัพท์ภายใน</span><span class="sub">ค้นหาเบอร์ติดต่อ</span></div>
         <div class="big-tile" onclick="Auth.logout()"><span class="ic">⎋</span><span class="tt">ออกจากระบบ</span><span class="sub">จบการใช้งาน</span></div>
       </div>
- 
+
       <div id="adminTiles" class="hidden">
         <div class="section-title">สำหรับผู้ดูแลระบบ</div>
         <div class="btn-grid">
@@ -390,7 +395,7 @@ table.data-table td{padding:9px 6px; border-bottom:1px solid var(--border); vert
       </div>
     </main>
   </div>
- 
+
   <!-- ===================== REPORT FORM ===================== -->
   <div class="view hidden" id="view-reportForm">
     <div class="topbar">
@@ -450,7 +455,7 @@ table.data-table td{padding:9px 6px; border-bottom:1px solid var(--border); vert
       </div>
     </main>
   </div>
- 
+
   <!-- ===================== REPORT LIST ===================== -->
   <div class="view hidden" id="view-reportList">
     <div class="topbar">
@@ -478,7 +483,7 @@ table.data-table td{padding:9px 6px; border-bottom:1px solid var(--border); vert
           <button class="btn btn-ghost" onclick="ReportList.reset()">ล้างตัวกรอง</button>
         </div>
       </div>
- 
+
       <div class="card bulk-bar" id="rl_bulkBar" style="display:none;">
         <div class="row-between">
           <div class="row-between" style="gap:8px;">
@@ -492,11 +497,11 @@ table.data-table td{padding:9px 6px; border-bottom:1px solid var(--border); vert
           </div>
         </div>
       </div>
- 
+
       <div id="reportListBox" class="spaced"></div>
     </main>
   </div>
- 
+
   <!-- ===================== PRINT PREVIEW ===================== -->
   <div class="view hidden" id="view-printPreview">
     <div class="topbar no-print">
@@ -512,7 +517,7 @@ table.data-table td{padding:9px 6px; border-bottom:1px solid var(--border); vert
       </div>
     </main>
   </div>
- 
+
   <!-- ===================== USERS (ADMIN) ===================== -->
   <div class="view hidden" id="view-users">
     <div class="topbar">
@@ -532,7 +537,7 @@ table.data-table td{padding:9px 6px; border-bottom:1px solid var(--border); vert
       </div>
     </main>
   </div>
- 
+
   <!-- ===================== SETTINGS (ADMIN) ===================== -->
   <div class="view hidden" id="view-settings">
     <div class="topbar">
@@ -578,7 +583,7 @@ table.data-table td{padding:9px 6px; border-bottom:1px solid var(--border); vert
       <button class="btn btn-primary btn-block" onclick="Settings.save()">💾 บันทึกการตั้งค่า</button>
     </main>
   </div>
- 
+
   <!-- ===================== ACTIVITY LOGS (ADMIN) ===================== -->
   <div class="view hidden" id="view-logs">
     <div class="topbar">
@@ -599,73 +604,22 @@ table.data-table td{padding:9px 6px; border-bottom:1px solid var(--border); vert
       <p class="hint" id="lg_count" style="text-align:center;"></p>
     </main>
   </div>
- 
-  <!-- ===================== PASS UPLOAD (ใบผ่าน) ===================== -->
-  <div class="view hidden" id="view-passUpload">
+
+  <!-- ===================== CONTACTS (เบอร์โทรศัพท์ภายใน) ===================== -->
+  <div class="view hidden" id="view-contacts">
     <div class="topbar">
-      <button class="back-btn" onclick="PassUp.confirmLeave('dashboard')">←</button>
-      <h1>บันทึกใบผ่าน</h1>
-      <span id="passCount" class="count-badge">0 รูป</span>
+      <button class="back-btn" onclick="Router.go('dashboard')">←</button>
+      <h1>เบอร์โทรศัพท์ภายใน</h1>
+      <button class="icon-btn hidden" id="contactsAddBtn" onclick="Contacts.openForm()" title="เพิ่มเบอร์โทร">➕</button>
     </div>
     <main class="view">
       <div class="card">
-        <div class="field"><label>วันที่</label><input type="date" id="pb_date"></div>
-        <div class="field"><label>กะการทำงาน</label><select id="pb_shift"></select></div>
-        <div class="field"><label>หมายเหตุ (ไม่บังคับ)</label><input type="text" id="pb_note" placeholder="เช่น รถขนส่ง / ผู้รับเหมา / เยี่ยมชม"></div>
+        <input type="text" id="ct_search" placeholder="🔍 ค้นหาชื่อ / ตำแหน่ง / แผนก / เบอร์โทร..." oninput="Contacts.render()">
       </div>
-      <div class="card">
-        <div class="section-title">ถ่ายรูปใบผ่าน (สูงสุด 100 รูป/ชุด)</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
-          <button type="button" class="btn btn-primary big-camera-btn" onclick="document.getElementById('pb_cameraInput').click()">📷<span>ถ่ายรูปทีละใบ</span></button>
-          <button type="button" class="btn btn-outline big-camera-btn" onclick="document.getElementById('pb_galleryInput').click()">🖼️<span>เลือกหลายรูป</span></button>
-          <input type="file" id="pb_cameraInput" accept="image/*" capture="environment" class="hidden" onchange="PassUp.handleFiles(this.files); this.value='';">
-          <input type="file" id="pb_galleryInput" accept="image/*" multiple class="hidden" onchange="PassUp.handleFiles(this.files); this.value='';">
-        </div>
-        <div id="pb_progressBar" class="progress-track hidden"><div id="pb_progressFill" class="progress-fill" style="background:var(--accent);width:0%;"></div></div>
-        <p class="hint" id="pb_hint">กดถ่ายรูปทีละใบหรือเลือกหลายรูปพร้อมกัน</p>
-        <div class="img-grid" id="pb_images"></div>
-      </div>
-      <div style="display:flex;gap:10px;margin-bottom:8px;">
-        <button class="btn btn-success" style="flex:2;min-height:54px;font-size:16px;" id="pb_saveBtn" onclick="PassUp.save()">✉️ บันทึก + ส่ง Email</button>
-        <button class="btn btn-ghost" style="flex:1;" onclick="PassUp.saveOnly()">บันทึกอย่างเดียว</button>
-      </div>
-      <button class="btn btn-outline btn-block" onclick="PassUp.newBatch()">🔄 เริ่มชุดใหม่</button>
+      <div id="contactsBox" class="spaced"></div>
     </main>
   </div>
- 
-  <!-- ===================== DELIVERY UPLOAD (เอกสารควบคุมการจัดส่งสินค้า) ===================== -->
-  <div class="view hidden" id="view-deliveryUpload">
-    <div class="topbar">
-      <button class="back-btn" onclick="DeliveryUp.confirmLeave('dashboard')">←</button>
-      <h1>บันทึกการจัดส่งสินค้า</h1>
-      <span id="deliveryCount" class="count-badge">0 รูป</span>
-    </div>
-    <main class="view">
-      <div class="card">
-        <div class="field"><label>วันที่</label><input type="date" id="dv_date"></div>
-        <div class="field"><label>กะการทำงาน</label><select id="dv_shift"></select></div>
-        <div class="field"><label>หมายเหตุ (ไม่บังคับ)</label><input type="text" id="dv_note" placeholder="เช่น เลขทะเบียนรถ / บริษัทขนส่ง / ปลายทาง"></div>
-      </div>
-      <div class="card">
-        <div class="section-title">ถ่ายรูปเอกสารควบคุมการจัดส่งสินค้า</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
-          <button type="button" class="btn btn-success big-camera-btn" onclick="document.getElementById('dv_cameraInput').click()">📷<span>ถ่ายรูปทีละใบ</span></button>
-          <button type="button" class="btn btn-outline big-camera-btn" onclick="document.getElementById('dv_galleryInput').click()">🖼️<span>เลือกหลายรูป</span></button>
-          <input type="file" id="dv_cameraInput" accept="image/*" capture="environment" class="hidden" onchange="DeliveryUp.handleFiles(this.files); this.value='';">
-          <input type="file" id="dv_galleryInput" accept="image/*" multiple class="hidden" onchange="DeliveryUp.handleFiles(this.files); this.value='';">
-        </div>
-        <div id="dv_progressBar" class="progress-track hidden"><div id="dv_progressFill" class="progress-fill" style="background:var(--green);width:0%;"></div></div>
-        <p class="hint" id="dv_hint">กดถ่ายรูปทีละใบหรือเลือกหลายรูปพร้อมกัน</p>
-        <div class="img-grid" id="dv_images"></div>
-      </div>
-      <div style="display:flex;gap:10px;margin-bottom:8px;">
-        <button class="btn btn-success" style="flex:2;min-height:54px;font-size:16px;" id="dv_saveBtn" onclick="DeliveryUp.save()">✉️ บันทึก + ส่ง Email</button>
-        <button class="btn btn-ghost" style="flex:1;" onclick="DeliveryUp.saveOnly()">บันทึกอย่างเดียว</button>
-      </div>
-      <button class="btn btn-outline btn-block" onclick="DeliveryUp.newBatch()">🔄 เริ่มชุดใหม่</button>
-    </main>
-  </div>
- 
+
   <div class="bottom-nav hidden" id="bottomNav">
     <div class="row">
       <button data-v="dashboard" onclick="Router.go('dashboard')"><span class="ic">🏠</span>หน้าหลัก</button>
@@ -674,17 +628,17 @@ table.data-table td{padding:9px 6px; border-bottom:1px solid var(--border); vert
     </div>
   </div>
 </div>
- 
+
 <script>
 /* ================================================================
    SUPABASE CLIENT
 ================================================================ */
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
- 
+
 function usernameToEmail(username){
   return String(username || '').trim().toLowerCase().replace(/[^a-z0-9._-]/g,'') + '@' + EMAIL_DOMAIN;
 }
- 
+
 /* ================================================================
    UI HELPERS
 ================================================================ */
@@ -717,7 +671,7 @@ const UI = {
   },
   closeModal(){ document.getElementById('modalRoot').innerHTML = ''; }
 };
- 
+
 /* ================================================================
    ROUTER
 ================================================================ */
@@ -730,21 +684,20 @@ const Router = {
     el.classList.remove('hidden');
     this.current = name;
     window.scrollTo(0,0);
- 
+
     const bn = document.getElementById('bottomNav');
     if(name === 'login'){ bn.classList.add('hidden'); } else { bn.classList.remove('hidden'); }
     document.querySelectorAll('.bottom-nav button').forEach(b => b.classList.toggle('active', b.dataset.v === name));
- 
+
     if(name === 'dashboard') Dashboard.refresh();
     if(name === 'reportList') ReportList.load();
     if(name === 'users'){ if(App.user.role!=='admin'){ UI.toast('ต้องเป็นผู้ดูแลระบบเท่านั้น','err'); Router.go('dashboard'); return; } Users.load(); }
     if(name === 'settings'){ if(App.user.role!=='admin'){ UI.toast('ต้องเป็นผู้ดูแลระบบเท่านั้น','err'); Router.go('dashboard'); return; } Settings.load(); }
     if(name === 'logs'){ if(App.user.role!=='admin'){ UI.toast('ต้องเป็นผู้ดูแลระบบเท่านั้น','err'); Router.go('dashboard'); return; } Logs.load(); }
-    if(name === 'passUpload') PassUp.reset();
-    if(name === 'deliveryUpload') DeliveryUp.reset();
+    if(name === 'contacts') Contacts.load();
   }
 };
- 
+
 /* ================================================================
    AUTH
    ──────────────────────────────────────────────────────────────
@@ -755,12 +708,12 @@ const Router = {
    เพราะ Supabase จัดการการต่ออายุ token ให้ดีกว่าเดิมอยู่แล้ว)
 ================================================================ */
 const App = { user: null, config: null };
- 
+
 const Auth = {
   init(){
     UI.applyTheme();
     document.getElementById('loginForm').addEventListener('submit', e=>{ e.preventDefault(); Auth.login(); });
- 
+
     // ฟังการเปลี่ยนแปลงสถานะ login/logout ตลอดเวลา (รวมถึงตอนเปิดหน้าเว็บครั้งแรก)
     sb.auth.onAuthStateChange((event, session) => {
       if(event === 'SIGNED_OUT'){
@@ -768,7 +721,7 @@ const Auth = {
         Router.go('login');
       }
     });
- 
+
     UI.showLoading(true);
     sb.auth.getSession().then(async ({ data: { session } }) => {
       if(session){
@@ -779,16 +732,16 @@ const Auth = {
       }
     });
   },
- 
+
   async loadProfileAndEnter(userId){
     const { data: profile, error } = await sb
       .from('profiles')
-      .select('id, username, fullname, role, position, status')
+      .select('id, username, fullname, role, position, status, avatar_url')
       .eq('id', userId)
       .single();
- 
+
     UI.showLoading(false);
- 
+
     if(error || !profile){
       UI.toast('ไม่พบข้อมูลผู้ใช้ กรุณาเข้าสู่ระบบใหม่','err');
       await sb.auth.signOut();
@@ -799,13 +752,13 @@ const Auth = {
       await sb.auth.signOut();
       return;
     }
- 
+
     App.user = profile;
     document.getElementById('adminTiles').classList.toggle('hidden', profile.role !== 'admin');
     await Config.load();
     Router.go('dashboard');
   },
- 
+
   async login(){
     const u = document.getElementById('loginUser').value.trim();
     const p = document.getElementById('loginPass').value;
@@ -814,14 +767,14 @@ const Auth = {
     const btn = document.getElementById('loginBtn');
     btn.disabled = true; btn.textContent = 'กำลังเข้าสู่ระบบ...';
     UI.showLoading(true);
- 
+
     const { data, error } = await sb.auth.signInWithPassword({
       email: usernameToEmail(u),
       password: p
     });
- 
+
     btn.disabled = false; btn.textContent = 'เข้าสู่ระบบ';
- 
+
     if(error){
       UI.showLoading(false);
       // ✅ ไม่บอกรายละเอียดจริงจาก Supabase (เช่น "Invalid login credentials")
@@ -830,14 +783,14 @@ const Auth = {
       errBox.classList.remove('hidden');
       return;
     }
- 
+
     document.getElementById('loginPass').value = '';
     await Auth.loadProfileAndEnter(data.user.id);
- 
+
     // อัปเดตเวลา login ล่าสุด (ไม่ต้องรอผลลัพธ์)
     sb.from('profiles').update({ last_login: new Date().toISOString() }).eq('id', data.user.id).then(()=>{});
   },
- 
+
   async logout(){
     UI.showLoading(true);
     await sb.auth.signOut();
@@ -845,7 +798,7 @@ const Auth = {
     Router.go('login');
   }
 };
- 
+
 /* ================================================================
    CONFIG (ตาราง config — อ่านได้ทุกคนที่ login แล้ว)
 ================================================================ */
@@ -858,7 +811,7 @@ const Config = {
     App.config = cfg;
   }
 };
- 
+
 /* ================================================================
    DASHBOARD
 ================================================================ */
@@ -873,33 +826,35 @@ const Dashboard = {
   },
   async refresh(){
     document.getElementById('dashGreeting').textContent = 'สวัสดี, ' + App.user.fullname;
-    document.getElementById('dashAvatar').textContent = (App.user.fullname||'?').trim().charAt(0);
+    document.getElementById('dashAvatar').innerHTML = App.user.avatar_url
+      ? `<img src="${App.user.avatar_url}">`
+      : UI.esc((App.user.fullname||'?').trim().charAt(0));
     const now = new Date();
     document.getElementById('dashDate').textContent =
       now.toLocaleDateString('th-TH', { weekday:'long', year:'numeric', month:'long', day:'numeric' }) +
       ' • ' + this.currentShiftLabel();
- 
+
     UI.showLoading(true);
- 
+
     // เรียก RPC ที่สร้างไว้ในขั้นตอนที่ 4 (get_dashboard_stats)
     const { data: stats, error: statsErr } = await sb.rpc('get_dashboard_stats');
- 
+
     // เช็ครายงานวันนี้ของกะปัจจุบัน (แทนของเดิมที่ getReports แล้วกรองฝั่ง client)
     const { data: todayReports, error: todayErr } = await sb
       .from('reports')
       .select('shift')
       .eq('date', this.todayStr());
- 
+
     UI.showLoading(false);
- 
+
     if(statsErr){ UI.toast('โหลดสถิติไม่สำเร็จ: ' + statsErr.message, 'err'); return; }
- 
+
     document.getElementById('statGrid').innerHTML = `
       <div class="stat-box"><div class="n">${stats.todayCount}</div><div class="l">วันนี้</div></div>
       <div class="stat-box"><div class="n">${stats.monthCount}</div><div class="l">เดือนนี้</div></div>
       <div class="stat-box"><div class="n">${stats.total}</div><div class="l">ทั้งหมด</div></div>
     `;
- 
+
     const shiftNow = this.currentShiftLabel();
     const hasToday = !todayErr && (todayReports||[]).some(r => r.shift === shiftNow);
     const box = document.getElementById('pendingAlert');
@@ -908,7 +863,7 @@ const Dashboard = {
       document.getElementById('pendingAlertText').textContent =
         'ยังไม่มีรายงานสำหรับกะ "' + shiftNow + '" ของวันนี้ — กดบันทึกรายงานได้เลย';
     } else { box.classList.add('hidden'); }
- 
+
     if(App.user.role === 'admin' && stats.byType){
       const items = Object.entries(stats.byType).sort((a,b)=>b[1]-a[1]).slice(0,5);
       const extra = document.getElementById('statExtra');
@@ -920,7 +875,7 @@ const Dashboard = {
     }
   }
 };
- 
+
 /* ================================================================
    HTML <-> PLAIN TEXT HELPERS
 ================================================================ */
@@ -940,7 +895,7 @@ function stripHtml(html){
   tmp.innerHTML = withBreaks;
   return (tmp.textContent || tmp.innerText || '').replace(/\s+/g,' ').trim();
 }
- 
+
 /* ================================================================
    RTE (Rich Text Editor) — เหมือนของเดิม + ดัก paste ฆ่าเชื้อฟอนต์แปลกปลอม
 ================================================================ */
@@ -1044,7 +999,7 @@ const RTE = {
     return tmp.innerHTML;
   }
 };
- 
+
 /* ================================================================
    QUICK PHRASES
 ================================================================ */
@@ -1074,7 +1029,7 @@ const QuickPhrases = {
     }
   }
 };
- 
+
 /* ================================================================
    FILTERS / DROPDOWN POPULATION
 ================================================================ */
@@ -1093,7 +1048,7 @@ const Filters = {
     Filters.fillSelect('rf_type', cfg.incident_types || []);
   }
 };
- 
+
 /* ================================================================
    IMAGE UPLOAD → Supabase Storage (compress + multi + progress)
    ──────────────────────────────────────────────────────────────
@@ -1103,11 +1058,11 @@ const Filters = {
 ================================================================ */
 const MAX_IMAGES_PER_REPORT = 10;
 const CATEGORY_GENERAL = 'รายงานทั่วไป';
- 
+
 function dataUrlToBlob(dataUrl){
   return fetch(dataUrl).then(r => r.blob());
 }
- 
+
 const ImgUp = {
   items: [],
   reset(){ this.items = []; this.render(); },
@@ -1122,7 +1077,7 @@ const ImgUp = {
     const id = 'img' + Date.now() + Math.random().toString(36).slice(2,6);
     const entry = { id, status:'compressing', progress:0, path:null, dataUrl:null };
     this.items.push(entry); this.render();
- 
+
     const reader = new FileReader();
     reader.onload = e => {
       const img = new Image();
@@ -1186,7 +1141,7 @@ function storagePathToPublicUrl(path){
   const { data } = sb.storage.from(STORAGE_BUCKET).getPublicUrl(path);
   return data.publicUrl;
 }
- 
+
 /* ================================================================
    REPORT FORM (create) — Part 2 ยังไม่รวมโหมด "แก้ไข" (จะเพิ่มใน Part 3
    พร้อมกับหน้ารายการรายงาน เพราะต้องกดจากรายการก่อนถึงจะแก้ไขได้)
@@ -1236,7 +1191,7 @@ const Report = {
     if(ImgUp.isBusy()){ UI.toast('กรุณารอให้รูปภาพอัปโหลดเสร็จก่อนบันทึก', 'err'); return; }
     const description = document.getElementById('rf_desc').innerHTML.trim();
     if(!stripHtml(description)){ UI.toast('กรุณากรอกรายละเอียดเหตุการณ์', 'err'); return; }
- 
+
     const data = {
       date: document.getElementById('rf_date').value,
       shift: document.getElementById('rf_shift').value,
@@ -1253,33 +1208,33 @@ const Report = {
     } else {
       data.updated_at = new Date().toISOString();
     }
- 
+
     const btn = document.getElementById('rf_saveBtn');
     btn.disabled = true;
     UI.showLoading(true);
- 
+
     const query = this.editingId
       ? sb.from('reports').update(data).eq('id', this.editingId)
       : sb.from('reports').insert(data);
     const { error } = await query;
- 
+
     UI.showLoading(false); btn.disabled = false;
- 
+
     if(error){ UI.toast('บันทึกไม่สำเร็จ: ' + error.message, 'err'); return; }
- 
+
     UI.toast(this.editingId ? 'บันทึกการแก้ไขสำเร็จ' : 'บันทึกรายงานสำเร็จ', 'ok');
     sb.from('logs').insert({
       user_id: App.user.id,
       action: this.editingId ? 'UPDATE_REPORT' : 'CREATE_REPORT',
       detail: this.editingId ? ('แก้ไขรายงาน: ' + this.editingId) : 'สร้างรายงานใหม่'
     }).then(()=>{});
- 
+
     const wasEditing = this.editingId;
     this.editingId = null;
     Router.go(wasEditing ? 'reportList' : 'dashboard');
   }
 };
- 
+
 /* ================================================================
    วันที่แบบไทย — ⚠️ ห้ามใช้ new Date(dateStr) กับสตริง 'YYYY-MM-DD'
    เพราะ JS จะตีความเป็นเที่ยงคืน UTC เสมอ ไม่ใช่เที่ยงคืนตามเขตเวลา
@@ -1293,14 +1248,14 @@ function dateTh(dateStr){
   if(p.length !== 3) return dateStr;
   return (+p[2]) + ' ' + (M[+p[1]] || '') + ' ' + ((+p[0]) + 543);
 }
- 
+
 /* ================================================================
    REPORT LIST  (+ multi-select สำหรับลบ/ส่งอีเมลหลายรายการ)
 ================================================================ */
 const ReportList = {
   all: [],
   selected: new Set(),
- 
+
   reset(){
     document.getElementById('fl_search').value = '';
     document.getElementById('fl_from').value = '';
@@ -1311,22 +1266,22 @@ const ReportList = {
     document.getElementById('fl_type').value = '';
     this.load();
   },
- 
+
   async load(){
     Filters.fillSelect('fl_shift', (App.config && App.config.shifts) || [], true, 'ทุกกะ');
     Filters.fillSelect('fl_location', (App.config && App.config.locations) || [], true, 'ทุกสถานที่');
     Filters.fillSelect('fl_type', (App.config && App.config.incident_types) || [], true, 'ทุกประเภทเหตุการณ์');
     document.getElementById('exportBtn').classList.toggle('hidden', App.user.role !== 'admin');
- 
+
     this.clearSelection();
     const box = document.getElementById('reportListBox');
     box.innerHTML = `<div class="empty-state"><div class="ic">⏳</div><p>กำลังโหลดรายการ...</p></div>`;
     UI.showLoading(true);
- 
+
     let q = sb.from('reports').select('*');
     // ✅ ถ้าไม่ใช่ admin ไม่จำเป็นต้องกรอง officer_id เองด้วยซ้ำ — RLS จะกรองให้อัตโนมัติ
     // (แต่ query ที่ระบุเงื่อนไขชัดเจนก็ยังทำงานถูกต้องเหมือนเดิม เพราะ RLS ครอบอยู่ชั้นล่างสุด)
- 
+
     const search = document.getElementById('fl_search').value.trim();
     const from = document.getElementById('fl_from').value;
     const to = document.getElementById('fl_to').value;
@@ -1334,7 +1289,7 @@ const ReportList = {
     const status = document.getElementById('fl_status').value;
     const location = document.getElementById('fl_location').value;
     const type = document.getElementById('fl_type').value;
- 
+
     if(from) q = q.gte('date', from);
     if(to) q = q.lte('date', to);
     if(shift) q = q.eq('shift', shift);
@@ -1342,12 +1297,12 @@ const ReportList = {
     if(location) q = q.eq('location', location);
     if(type) q = q.eq('incident_type', type);
     if(search) q = q.or(`location.ilike.%${search}%,incident_type.ilike.%${search}%,description.ilike.%${search}%`);
- 
+
     q = q.order('date', { ascending:false }).order('created_at', { ascending:false }).limit(200);
- 
+
     const { data, error } = await q;
     UI.showLoading(false);
- 
+
     if(error){
       box.innerHTML = `<div class="empty-state"><div class="ic">⛔</div><p>${UI.esc(error.message)}</p></div>`;
       return;
@@ -1355,7 +1310,7 @@ const ReportList = {
     this.all = data || [];
     this.render();
   },
- 
+
   typeIcon(t){
     if(!t) return '📄';
     if(t.indexOf('ฉุกเฉิน')>-1 || t.indexOf('ไฟไหม้')>-1) return '🚨';
@@ -1364,7 +1319,7 @@ const ReportList = {
     if(t.indexOf('อุบัติเหตุ')>-1) return '⚠️';
     return '✅';
   },
- 
+
   render(){
     const box = document.getElementById('reportListBox');
     if(!this.all.length){
@@ -1407,7 +1362,7 @@ const ReportList = {
     });
     this.updateBulkBar();
   },
- 
+
   toggleSelect(id, checked){
     if(checked) this.selected.add(id); else this.selected.delete(id);
     const card = document.querySelector(`.report-card[data-id="${id}"]`);
@@ -1430,7 +1385,7 @@ const ReportList = {
     bar.style.display = this.all.length ? 'block' : 'none';
     document.getElementById('rl_bulkDeleteBtn').classList.toggle('hidden', App.user.role !== 'admin');
   },
- 
+
   openDetail(r){
     window._RC = window._RC || {}; window._RC[r.id] = r;
     const canEdit = App.user.role === 'admin' || r.officer_id === App.user.id;
@@ -1454,7 +1409,7 @@ const ReportList = {
         </div>
       </div></div>`;
   },
- 
+
   sendMail(id){
     EmailService.sendReport(id);
   },
@@ -1462,7 +1417,7 @@ const ReportList = {
     if(!this.selected.size){ UI.toast('กรุณาเลือกอย่างน้อย 1 รายการ','err'); return; }
     EmailService.sendReports(Array.from(this.selected));
   },
- 
+
   async remove(id){
     if(!confirm('ต้องการลบรายงานนี้ใช่หรือไม่?')) return;
     UI.showLoading(true);
@@ -1484,7 +1439,7 @@ const ReportList = {
     UI.toast('ลบรายงานสำเร็จ ' + data + ' รายการ','ok');
     this.load();
   },
- 
+
   async exportCsv(){
     if(!this.all.length){ UI.toast('ไม่มีข้อมูลให้ส่งออก','err'); return; }
     let csv = '\ufeffรหัส,วันที่,กะ,ชื่อเจ้าหน้าที่,สถานที่,ประเภทเหตุการณ์,รายละเอียด,การดำเนินการ,สถานะ,วันที่สร้าง\n';
@@ -1503,7 +1458,7 @@ const ReportList = {
     document.body.appendChild(a); a.click(); a.remove();
   }
 };
- 
+
 /* ================================================================
    PRINT VIEW — พิมพ์ผ่านเบราว์เซอร์ตรงๆ (window.print()) ไม่ต้องพึ่ง
    backend สร้าง PDF เลย ต่างจากของเดิมที่ใช้ DocumentApp ฝั่งเซิร์ฟเวอร์
@@ -1536,7 +1491,7 @@ const PrintView = {
     EmailService.sendReport(this.payload.id);
   }
 };
- 
+
 /* ================================================================
    EMAIL SERVICE — ⚠️ Placeholder ชั่วคราว
    ──────────────────────────────────────────────────────────────
@@ -1553,7 +1508,7 @@ const EmailService = {
     UI.toast('ระบบส่งอีเมลยังไม่ได้ตั้งค่า — จะพร้อมใช้งานหลังสร้าง Edge Function ในขั้นตอนถัดไป', 'info');
   }
 };
- 
+
 /* ================================================================
    USERS (admin) — ⚠️ สร้าง/ลบ/รีเซ็ตรหัสผ่าน ต้องพึ่ง Edge Function
    (ต้องใช้ service_role เพื่อเรียก Supabase Auth Admin API) ส่วนแก้ไข
@@ -1572,7 +1527,12 @@ const Users = {
   render(){
     document.getElementById('usersTbody').innerHTML = this.all.map(u => `
       <tr>
-        <td>${UI.esc(u.fullname)}<div style="font-size:11.5px;color:var(--text-mute)">@${UI.esc(u.username)}</div></td>
+        <td>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <div class="avatar-thumb">${u.avatar_url ? `<img src="${u.avatar_url}">` : UI.esc((u.fullname||'?').trim().charAt(0))}</div>
+            <div>${UI.esc(u.fullname)}<div style="font-size:11.5px;color:var(--text-mute)">@${UI.esc(u.username)}</div></div>
+          </div>
+        </td>
         <td>${UI.esc(u.position||'-')}</td>
         <td>${u.role==='admin'?'ผู้ดูแลระบบ':'เจ้าหน้าที่ รปภ.'}</td>
         <td>${u.status==='active'?'ใช้งาน':'ระงับ'}<span class="status-dot ${u.status==='active'?'dot-active':'dot-inactive'}"></span></td>
@@ -1585,13 +1545,20 @@ const Users = {
         </td>
       </tr>`).join('');
   },
+  pendingAvatar: null,
   openForm(u){
     const isEdit = !!u;
+    this.pendingAvatar = null;
     document.getElementById('modalRoot').innerHTML = `<div class="modal-bg"><div class="modal">
       <div class="modal-head"><h3>${isEdit?'แก้ไขผู้ใช้':'เพิ่มผู้ใช้ใหม่'}</h3><button class="modal-close" onclick="UI.closeModal()">✕</button></div>
       ${!isEdit ? `<div class="card" style="background:var(--amber-bg);color:var(--amber);font-size:13px;margin-bottom:14px;">
         ⚠️ ยังเปิดใช้งานไม่ได้ในตอนนี้ ต้องรอ Edge Function สำหรับสร้างผู้ใช้ในขั้นตอนถัดไป
-      </div>` : ''}
+      </div>` : `
+      <div class="field" style="text-align:center;">
+        <div class="avatar-thumb" id="uf_avatarPreview" style="width:72px;height:72px;font-size:24px;margin:0 auto 8px;">${u.avatar_url ? `<img src="${u.avatar_url}">` : UI.esc((u.fullname||'?').trim().charAt(0))}</div>
+        <button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById('uf_avatarInput').click()">📷 เปลี่ยนรูปโปรไฟล์</button>
+        <input type="file" id="uf_avatarInput" accept="image/*" class="hidden" onchange="Users.pickAvatar(this.files[0])">
+      </div>`}
       <div class="field"><label>ชื่อผู้ใช้</label><input type="text" id="uf_username" value="${isEdit?UI.esc(u.username):''}" disabled></div>
       <div class="field"><label>ชื่อ-นามสกุล</label><input type="text" id="uf_fullname" value="${isEdit?UI.esc(u.fullname):''}"></div>
       <div class="field"><label>ตำแหน่ง</label><input type="text" id="uf_position" value="${isEdit?UI.esc(u.position||''):''}"></div>
@@ -1601,6 +1568,26 @@ const Users = {
       <button class="btn btn-primary btn-block" onclick="Users.submit(${isEdit?`'${u.id}'`:'null'})" ${!isEdit?'disabled':''}>บันทึก</button>
     </div></div>`;
   },
+  pickAvatar(file){
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      const img = new Image();
+      img.onload = () => {
+        const maxW = 400;
+        let w = img.width, h = img.height;
+        if(w > maxW){ h = Math.round(h*(maxW/w)); w = maxW; }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img,0,0,w,h);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+        this.pendingAvatar = dataUrl;
+        document.getElementById('uf_avatarPreview').innerHTML = `<img src="${dataUrl}">`;
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  },
   async submit(userId){
     if(!userId){ UI.toast('การเพิ่มผู้ใช้ใหม่ยังไม่พร้อมใช้งาน', 'err'); return; }
     const fullname = document.getElementById('uf_fullname').value.trim();
@@ -1608,12 +1595,33 @@ const Users = {
     const role = document.getElementById('uf_role').value;
     if(!fullname){ UI.toast('กรุณากรอกชื่อ-นามสกุล','err'); return; }
     UI.showLoading(true);
-    const { error } = await sb.from('profiles').update({ fullname, position, role }).eq('id', userId);
+
+    const updates = { fullname, position, role };
+    if(this.pendingAvatar){
+      try {
+        const blob = await dataUrlToBlob(this.pendingAvatar);
+        const path = `${userId}/avatar_${Date.now()}.jpg`;
+        const { error: upErr } = await sb.storage.from('avatars').upload(path, blob, { contentType:'image/jpeg', upsert:true });
+        if(upErr) throw upErr;
+        const { data: pub } = sb.storage.from('avatars').getPublicUrl(path);
+        updates.avatar_url = pub.publicUrl;
+      } catch(e){
+        UI.showLoading(false);
+        UI.toast('อัปโหลดรูปโปรไฟล์ไม่สำเร็จ: ' + e.message, 'err');
+        return;
+      }
+    }
+
+    const { error } = await sb.from('profiles').update(updates).eq('id', userId);
     UI.showLoading(false);
     if(error){ UI.toast('แก้ไขไม่สำเร็จ: ' + error.message, 'err'); return; }
     UI.toast('แก้ไขผู้ใช้สำเร็จ','ok');
     UI.closeModal();
     this.load();
+    if(userId === App.user.id && updates.avatar_url){
+      App.user.avatar_url = updates.avatar_url;
+      Dashboard.refresh();
+    }
   },
   resetPw(id){
     UI.toast('การรีเซ็ตรหัสผ่านยังไม่พร้อมใช้งาน — จะเปิดใช้งานพร้อม Edge Function ในขั้นตอนถัดไป', 'info');
@@ -1632,7 +1640,7 @@ const Users = {
     UI.toast('การลบผู้ใช้ยังไม่พร้อมใช้งาน — จะเปิดใช้งานพร้อม Edge Function ในขั้นตอนถัดไป (ตอนนี้ใช้ "ระงับ" แทนไปก่อนได้)', 'info');
   }
 };
- 
+
 /* ================================================================
    SETTINGS (admin)
 ================================================================ */
@@ -1701,7 +1709,7 @@ const Settings = {
     UI.toast('ล้างข้อมูลสำเร็จ: ลบรายงาน ' + data.deletedReports + ' รายการ, ลบ Log ' + data.deletedLogs + ' รายการ', 'ok');
   }
 };
- 
+
 /* ================================================================
    LOGS (admin) — RLS จำกัดให้อ่านได้เฉพาะ admin อยู่แล้ว
 ================================================================ */
@@ -1741,185 +1749,7 @@ const Logs = {
     document.getElementById('lg_count').textContent = 'แสดง ' + filtered.length + ' จาก ' + this.all.length + ' รายการล่าสุด';
   }
 };
- 
-/* ================================================================
-   GENERIC BATCH UPLOADER (ใบผ่าน / เอกสารจัดส่งสินค้า)
-   ──────────────────────────────────────────────────────────────
-   หลักการเดียวกับ ImgUp ใน Part 2 แต่รองรับได้ถึง 100 รูป/ชุด และ
-   บันทึกเป็นรายงาน 1 แถวที่มี incident_type = 'ใบผ่าน' หรือ
-   'เอกสารควบคุมการจัดส่งสินค้า' (ใช้ตารางเดียวกับรายงานทั่วไปเลย
-   ตรงตามที่ระบบเดิมออกแบบไว้ — ไม่ต้องแยกตาราง)
-================================================================ */
-const MAX_IMAGES_PER_BATCH = 100;
- 
-function createBatchUploader(cfg){
-  return {
-    items: [],
-    reset(){
-      this.items = [];
-      this.render();
-      document.getElementById(cfg.ids.date).value = Dashboard.todayStr();
-      Filters.fillSelect(cfg.ids.shift, (App.config && App.config.shifts) || ['เช้า','บ่าย','ดึก']);
-      document.getElementById(cfg.ids.shift).value = Dashboard.currentShiftLabel();
-      document.getElementById(cfg.ids.note).value = '';
-      this.updateProgress();
-    },
-    confirmLeave(target){
-      if(this.items.length > 0){
-        if(confirm('ยังมีรูปที่ยังไม่ได้บันทึก ต้องการออกจากหน้านี้หรือไม่? รูปที่อัปโหลดแล้วจะยังอยู่บน Storage')) Router.go(target);
-      } else { Router.go(target); }
-    },
-    newBatch(){
-      if(!this.items.length) return;
-      if(!confirm('ล้างรูปทั้งหมดและเริ่มชุดใหม่ใช่หรือไม่?')) return;
-      const paths = this.items.filter(i=>i.path).map(i=>i.path);
-      if(paths.length) sb.storage.from(STORAGE_BUCKET).remove(paths);
-      this.items = []; this.render(); this.updateProgress();
-      UI.toast('เริ่มชุดใหม่แล้ว', 'info');
-    },
-    handleFiles(fileList){
-      const files = Array.from(fileList || []);
-      if(this.items.length + files.length > cfg.maxImages){
-        UI.toast('รองรับสูงสุด ' + cfg.maxImages + ' รูปต่อชุด', 'err');
-        const canAdd = cfg.maxImages - this.items.length;
-        if(canAdd <= 0) return;
-        files.slice(0, canAdd).forEach(f => this.processFile(f));
-        return;
-      }
-      files.forEach(f => this.processFile(f));
-    },
-    processFile(file){
-      const id = cfg.prefix + Date.now() + Math.random().toString(36).slice(2,6);
-      const entry = { id, status:'compressing', progress:0, path:null, dataUrl:null };
-      this.items.push(entry); this.render(); this.updateProgress();
- 
-      const reader = new FileReader();
-      reader.onload = e => {
-        const img = new Image();
-        img.onload = () => {
-          const maxW = 1200;
-          let w = img.width, h = img.height;
-          if(w > maxW){ h = Math.round(h * (maxW/w)); w = maxW; }
-          const canvas = document.createElement('canvas');
-          canvas.width = w; canvas.height = h;
-          canvas.getContext('2d').drawImage(img,0,0,w,h);
-          entry.dataUrl = canvas.toDataURL('image/jpeg', 0.75);
-          entry.status = 'uploading'; this.render(); this.updateProgress();
- 
-          const dateVal = document.getElementById(cfg.ids.date).value || Dashboard.todayStr();
-          const path = `${cfg.category}/${dateVal}/${entry.id}.jpg`;
-          dataUrlToBlob(entry.dataUrl).then(blob =>
-            sb.storage.from(STORAGE_BUCKET).upload(path, blob, { contentType:'image/jpeg', upsert:false })
-          ).then(({ error }) => {
-            if(error) throw error;
-            entry.status = 'done'; entry.progress = 100; entry.path = path;
-            this.render(); this.updateProgress();
-          }).catch(() => {
-            entry.status = 'error'; this.render(); this.updateProgress();
-            UI.toast('อัปโหลดรูปไม่สำเร็จ 1 รูป', 'err');
-          });
-        };
-        img.onerror = () => { entry.status = 'error'; this.render(); };
-        img.src = e.target.result;
-      };
-      reader.readAsDataURL(file);
-    },
-    async remove(id){
-      const idx = this.items.findIndex(i => i.id === id);
-      if(idx < 0) return;
-      const it = this.items[idx];
-      this.items.splice(idx,1);
-      this.render(); this.updateProgress();
-      if(it.path) await sb.storage.from(STORAGE_BUCKET).remove([it.path]);
-    },
-    isBusy(){ return this.items.some(i => i.status==='uploading' || i.status==='compressing'); },
-    getDonePaths(){ return this.items.filter(i => i.status==='done').map(i => i.path); },
-    updateProgress(){
-      const total = this.items.length;
-      const done = this.items.filter(i=>i.status==='done').length;
-      const err = this.items.filter(i=>i.status==='error').length;
-      const busy = this.items.filter(i=>i.status==='uploading'||i.status==='compressing').length;
- 
-      document.getElementById(cfg.ids.count).textContent = done + ' รูป' + (busy>0 ? ' (กำลังอัปโหลด '+busy+')' : '');
- 
-      const bar = document.getElementById(cfg.ids.progressBar);
-      const fill = document.getElementById(cfg.ids.progressFill);
-      if(total > 0 && busy > 0){ bar.classList.remove('hidden'); fill.style.width = Math.round((done/total)*100) + '%'; }
-      else { bar.classList.add('hidden'); }
- 
-      const hint = document.getElementById(cfg.ids.hint);
-      if(total === 0) hint.textContent = 'กดถ่ายรูปทีละใบหรือเลือกหลายรูปพร้อมกัน';
-      else if(busy > 0) hint.textContent = '⏳ กำลังอัปโหลด ' + busy + ' รูป... (อัปโหลดแล้ว ' + done + '/' + total + ')';
-      else if(err > 0) hint.textContent = '⚠️ อัปโหลดสำเร็จ ' + done + ' รูป, ล้มเหลว ' + err + ' รูป';
-      else hint.textContent = '✅ พร้อมส่ง — ' + done + ' รูป';
- 
-      document.getElementById(cfg.ids.saveBtn).disabled = busy > 0 || done === 0;
-    },
-    render(){
-      const box = document.getElementById(cfg.ids.images);
-      box.innerHTML = this.items.map(it => `
-        <div class="img-thumb">
-          <img src="${it.dataUrl || ''}">
-          ${it.status!=='done' && it.status!=='error' ? `<div class="bar"><i style="width:${it.progress}%"></i></div>` : ''}
-          ${it.status==='error' ? `<div class="bar"><i style="width:100%;background:var(--red)"></i></div>` : ''}
-          <button class="rm" onclick="${cfg.varName}.remove('${it.id}')">✕</button>
-        </div>`).join('');
-    },
-    async _doSave(sendEmail){
-      if(this.isBusy()){ UI.toast('กรุณารอให้รูปภาพอัปโหลดเสร็จก่อน', 'err'); return; }
-      const paths = this.getDonePaths();
-      if(!paths.length){ UI.toast('กรุณาถ่ายรูปอย่างน้อย 1 รูป', 'err'); return; }
- 
-      const note = document.getElementById(cfg.ids.note).value.trim();
-      const data = {
-        date: document.getElementById(cfg.ids.date).value,
-        shift: document.getElementById(cfg.ids.shift).value,
-        officer_id: App.user.id,
-        officer_name: App.user.fullname,
-        location: cfg.defaultLocation,
-        incident_type: cfg.typeLabel,
-        description: note || ('บันทึก' + cfg.typeLabel + ' ' + paths.length + ' ใบ'),
-        action_taken: '',
-        image_urls: paths,
-        status: 'submitted'
-      };
- 
-      const btn = document.getElementById(cfg.ids.saveBtn);
-      btn.disabled = true;
-      UI.showLoading(true);
-      const { data: inserted, error } = await sb.from('reports').insert(data).select('id').single();
-      UI.showLoading(false);
- 
-      if(error){ UI.toast('บันทึกไม่สำเร็จ: ' + error.message, 'err'); btn.disabled = false; return; }
- 
-      sb.from('logs').insert({ user_id: App.user.id, action: cfg.logAction, detail: 'บันทึก'+cfg.typeLabel+' '+paths.length+' รูป' }).then(()=>{});
- 
-      if(sendEmail){
-        EmailService.sendReport(inserted.id);
-      } else {
-        UI.toast('บันทึกสำเร็จ ' + paths.length + ' รูป', 'ok');
-      }
- 
-      this.items = []; this.render(); this.updateProgress();
-      btn.disabled = false;
-    },
-    save(){ this._doSave(true); },
-    saveOnly(){ this._doSave(false); }
-  };
-}
- 
-const PassUp = createBatchUploader({
-  prefix:'pb', varName:'PassUp', category:'ใบผ่าน', typeLabel:'ใบผ่าน',
-  defaultLocation:'ใบผ่านออก-เข้า', logAction:'PASS_BATCH', maxImages: MAX_IMAGES_PER_BATCH,
-  ids:{ date:'pb_date', shift:'pb_shift', note:'pb_note', count:'passCount', images:'pb_images', progressBar:'pb_progressBar', progressFill:'pb_progressFill', hint:'pb_hint', saveBtn:'pb_saveBtn' }
-});
- 
-const DeliveryUp = createBatchUploader({
-  prefix:'dv', varName:'DeliveryUp', category:'เอกสารควบคุมการจัดส่งสินค้า', typeLabel:'เอกสารควบคุมการจัดส่งสินค้า',
-  defaultLocation:'จุดควบคุมการจัดส่ง', logAction:'DELIVERY_BATCH', maxImages: MAX_IMAGES_PER_BATCH,
-  ids:{ date:'dv_date', shift:'dv_shift', note:'dv_note', count:'deliveryCount', images:'dv_images', progressBar:'dv_progressBar', progressFill:'dv_progressFill', hint:'dv_hint', saveBtn:'dv_saveBtn' }
-});
- 
+
 /* ================================================================
    PWA manifest (เหมือนของเดิม)
 ================================================================ */
@@ -1935,10 +1765,88 @@ const DeliveryUp = createBatchUploader({
   link.rel = 'manifest'; link.href = URL.createObjectURL(blob);
   document.head.appendChild(link);
 })();
- 
+
 window.addEventListener('offline', () => UI.toast('📴 คุณออฟไลน์อยู่ กรุณากลับมาออนไลน์ก่อนบันทึกรายงาน', 'err'));
 window.addEventListener('online',  () => UI.toast('✅ กลับมาออนไลน์แล้ว', 'ok'));
- 
+
+/* ================================================================
+   CONTACTS (เบอร์โทรศัพท์ภายใน) — ทุกคนดู/ค้นหาได้, Admin เพิ่ม/แก้/ลบ
+================================================================ */
+const Contacts = {
+  all: [],
+  async load(){
+    document.getElementById('contactsAddBtn').classList.toggle('hidden', App.user.role !== 'admin');
+    UI.showLoading(true);
+    const { data, error } = await sb.from('contacts').select('*').order('name', { ascending:true });
+    UI.showLoading(false);
+    if(error){ UI.toast('โหลดข้อมูลไม่สำเร็จ: ' + error.message, 'err'); return; }
+    this.all = data || [];
+    document.getElementById('ct_search').value = '';
+    this.render();
+  },
+  render(){
+    const q = (document.getElementById('ct_search').value || '').toLowerCase().trim();
+    const filtered = !q ? this.all : this.all.filter(c =>
+      (c.name + c.position + c.department + c.phone).toLowerCase().includes(q));
+    const box = document.getElementById('contactsBox');
+    if(!filtered.length){
+      box.innerHTML = `<div class="empty-state"><div class="ic">📭</div><p>ไม่พบข้อมูลที่ค้นหา</p></div>`;
+      return;
+    }
+    const isAdmin = App.user.role === 'admin';
+    box.innerHTML = filtered.map(c => `
+      <div class="contact-card">
+        <div style="min-width:0;">
+          <div class="name">${UI.esc(c.name)}</div>
+          <div class="meta">${UI.esc(c.position||'')}${c.position&&c.department?' • ':''}${UI.esc(c.department||'')}</div>
+          ${c.notes ? `<div class="meta">${UI.esc(c.notes)}</div>` : ''}
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;flex-shrink:0;">
+          <a class="phone-link" href="tel:${UI.esc(c.phone)}">📞 ${UI.esc(c.phone)}</a>
+          ${isAdmin ? `<button class="btn btn-sm btn-outline" onclick='Contacts.openForm(${JSON.stringify(c).replace(/'/g,"&#39;")})'>แก้ไข</button>
+          <button class="btn btn-sm btn-danger" onclick="Contacts.remove(${c.id})">ลบ</button>` : ''}
+        </div>
+      </div>`).join('');
+  },
+  openForm(c){
+    const isEdit = !!c;
+    document.getElementById('modalRoot').innerHTML = `<div class="modal-bg"><div class="modal">
+      <div class="modal-head"><h3>${isEdit?'แก้ไขเบอร์โทร':'เพิ่มเบอร์โทรใหม่'}</h3><button class="modal-close" onclick="UI.closeModal()">✕</button></div>
+      <div class="field"><label>ชื่อ</label><input type="text" id="ctf_name" value="${isEdit?UI.esc(c.name):''}"></div>
+      <div class="field"><label>ตำแหน่ง</label><input type="text" id="ctf_position" value="${isEdit?UI.esc(c.position||''):''}"></div>
+      <div class="field"><label>แผนก/หน่วยงาน</label><input type="text" id="ctf_department" value="${isEdit?UI.esc(c.department||''):''}"></div>
+      <div class="field"><label>เบอร์โทรศัพท์</label><input type="text" id="ctf_phone" value="${isEdit?UI.esc(c.phone):''}" placeholder="เช่น 02-123-4567 หรือ 101"></div>
+      <div class="field"><label>หมายเหตุ (ไม่บังคับ)</label><input type="text" id="ctf_notes" value="${isEdit?UI.esc(c.notes||''):''}"></div>
+      <button class="btn btn-primary btn-block" onclick="Contacts.submit(${isEdit?c.id:'null'})">บันทึก</button>
+    </div></div>`;
+  },
+  async submit(id){
+    const data = {
+      name: document.getElementById('ctf_name').value.trim(),
+      position: document.getElementById('ctf_position').value.trim(),
+      department: document.getElementById('ctf_department').value.trim(),
+      phone: document.getElementById('ctf_phone').value.trim(),
+      notes: document.getElementById('ctf_notes').value.trim()
+    };
+    if(!data.name || !data.phone){ UI.toast('กรุณากรอกชื่อและเบอร์โทรศัพท์','err'); return; }
+    UI.showLoading(true);
+    const { error } = id ? await sb.from('contacts').update(data).eq('id', id) : await sb.from('contacts').insert(data);
+    UI.showLoading(false);
+    if(error){ UI.toast('บันทึกไม่สำเร็จ: ' + error.message, 'err'); return; }
+    UI.toast('บันทึกสำเร็จ','ok');
+    UI.closeModal();
+    this.load();
+  },
+  async remove(id){
+    if(!confirm('ต้องการลบเบอร์โทรนี้ใช่หรือไม่?')) return;
+    UI.showLoading(true);
+    const { error } = await sb.from('contacts').delete().eq('id', id);
+    UI.showLoading(false);
+    if(error){ UI.toast('ลบไม่สำเร็จ: ' + error.message, 'err'); return; }
+    this.load();
+  }
+};
+
 /* ================================================================
    INIT
 ================================================================ */
