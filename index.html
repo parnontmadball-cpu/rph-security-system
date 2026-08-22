@@ -21,6 +21,7 @@
   const EDGE_FUNCTION_URL = SUPABASE_URL + '/functions/v1/admin-api';
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 
 <style>
 /* ============================================================
@@ -411,15 +412,23 @@ table.data-table td{padding:9px 6px; border-bottom:1px solid var(--border); vert
           <h2 id="dashGreeting">สวัสดี</h2>
           <p class="sub" id="dashDate"></p>
         </div>
-        <div class="dash-avatar" id="dashAvatar">A</div>
+        <div class="dash-avatar" id="dashAvatar" onclick="MyProfile.open()" style="cursor:pointer;" title="โปรไฟล์ของฉัน">A</div>
       </div>
 
       <div id="pendingAlert" class="alert-pending hidden">
         <span>⚠️</span><span id="pendingAlertText"></span>
       </div>
 
+      <div id="vehicleAlert" class="alert-pending hidden" style="background:var(--red-bg);color:var(--red);cursor:pointer;" onclick="Router.go('vehicles')">
+        <span>🚙</span><span id="vehicleAlertText"></span>
+      </div>
+
       <div class="stat-grid" id="statGrid"></div>
       <div id="statExtra"></div>
+      <div id="trendChartWrap" class="card hidden">
+        <div class="section-title">แนวโน้มรายงาน 14 วันล่าสุด</div>
+        <canvas id="trendChart" height="160"></canvas>
+      </div>
 
       <div class="section-title">เมนูหลัก</div>
       <div class="btn-grid">
@@ -508,24 +517,21 @@ table.data-table td{padding:9px 6px; border-bottom:1px solid var(--border); vert
     <main class="view">
       <div class="card">
         <div class="filter-bar">
-          <input type="text" id="fl_search" placeholder="🔍 ค้นหาข้อความ..." class="full">
-          <input type="date" id="fl_from" title="จากวันที่">
-          <input type="date" id="fl_to" title="ถึงวันที่">
-          <select id="fl_shift"><option value="">ทุกกะ</option></select>
+          <input type="text" id="fl_search" placeholder="🔍 ค้นหาข้อความ..." class="full" oninput="ReportList.debouncedSearch()">
+          <input type="date" id="fl_from" title="จากวันที่" onchange="ReportList.load()">
+          <input type="date" id="fl_to" title="ถึงวันที่" onchange="ReportList.load()">
+          <select id="fl_shift" onchange="ReportList.load()"><option value="">ทุกกะ</option></select>
           <div id="fl_status_wrap">
-            <select id="fl_status">
+            <select id="fl_status" onchange="ReportList.load()">
               <option value="">ทุกสถานะ</option>
               <option value="submitted">🕐 รอตรวจสอบ (ยังไม่ส่งอีเมลจริง)</option>
               <option value="sent">ส่งอีเมลแล้ว</option>
             </select>
           </div>
-          <select id="fl_location"><option value="">ทุกสถานที่</option></select>
-          <select id="fl_type"><option value="">ทุกประเภทเหตุการณ์</option></select>
+          <select id="fl_location" onchange="ReportList.load()"><option value="">ทุกสถานที่</option></select>
+          <select id="fl_type" onchange="ReportList.load()"><option value="">ทุกประเภทเหตุการณ์</option></select>
         </div>
-        <div class="btn-grid">
-          <button class="btn btn-primary" onclick="ReportList.load()">🔍 ค้นหา</button>
-          <button class="btn btn-ghost" onclick="ReportList.reset()">ล้างตัวกรอง</button>
-        </div>
+        <button class="btn btn-ghost btn-block" onclick="ReportList.reset()">ล้างตัวกรอง</button>
       </div>
 
       <div class="card bulk-bar" id="rl_bulkBar" style="display:none;">
@@ -543,6 +549,7 @@ table.data-table td{padding:9px 6px; border-bottom:1px solid var(--border); vert
       </div>
 
       <div id="reportListBox" class="spaced"></div>
+      <button class="btn btn-outline btn-block hidden" id="rl_loadMoreBtn" style="margin-top:10px;" onclick="ReportList.loadMore()">โหลดเพิ่มเติม</button>
     </main>
   </div>
 
@@ -593,6 +600,15 @@ table.data-table td{padding:9px 6px; border-bottom:1px solid var(--border); vert
         <div class="section-title">ข้อมูลองค์กร</div>
         <div class="field"><label>ชื่อองค์กร / สถานที่</label><input type="text" id="cfg_org"></div>
         <div class="field"><label>อีเมลผู้รับรายงานประจำวัน (คั่นด้วย , )</label><input type="text" id="cfg_emails" placeholder="security@company.com, manager@company.com"></div>
+        <div class="field"><label>อีเมลต้นทาง (email_from)</label><input type="text" id="cfg_emailfrom" placeholder="onboarding@resend.dev"></div>
+        <div class="field">
+          <label>ทดสอบระบบส่งอีเมล</label>
+          <div style="display:flex;gap:8px;">
+            <input type="text" id="cfg_testEmailTo" placeholder="กรอกอีเมลที่จะส่งทดสอบ">
+            <button class="btn btn-outline btn-sm" style="flex-shrink:0;" onclick="Settings.testEmail()">📧 ส่งทดสอบ</button>
+          </div>
+          <p class="hint">ใช้เช็คว่าตั้งค่า Resend ถูกต้องหรือยัง โดยไม่ต้องรอมีรายงานจริง</p>
+        </div>
       </div>
       <div class="card">
         <div class="section-title">กะการทำงาน</div>
@@ -646,6 +662,7 @@ table.data-table td{padding:9px 6px; border-bottom:1px solid var(--border); vert
         </table>
       </div>
       <p class="hint" id="lg_count" style="text-align:center;"></p>
+      <button class="btn btn-outline btn-block hidden" id="lg_loadMoreBtn" onclick="Logs.loadMore()">โหลดเพิ่มเติม</button>
     </main>
   </div>
 
@@ -654,6 +671,7 @@ table.data-table td{padding:9px 6px; border-bottom:1px solid var(--border); vert
     <div class="topbar">
       <button class="back-btn" onclick="Router.go('dashboard')">←</button>
       <h1>ตรวจสอบเอกสารรถ</h1>
+      <button class="icon-btn hidden" id="vhExportBtn" onclick="Vehicles.exportCsv()" title="ส่งออก CSV">⬇️</button>
       <button class="icon-btn hidden" id="vhImportBtn" onclick="Vehicles.openImport()" title="นำเข้าจาก Google Sheet">📥</button>
       <button class="icon-btn hidden" id="vhAddBtn" onclick="Vehicles.openForm()" title="เพิ่มรายการ">➕</button>
     </div>
@@ -903,6 +921,161 @@ const Config = {
 /* ================================================================
    DASHBOARD
 ================================================================ */
+/* ================================================================
+   MY PROFILE — ให้ทุกคน (ไม่ใช่แค่ Admin) เปลี่ยนรูปโปรไฟล์/รหัสผ่านตัวเองได้
+   - รูปโปรไฟล์: อัปโหลดขึ้น Storage เอง แล้วเรียก RPC update_my_avatar()
+     (ปลอดภัยกว่าการเปิด RLS ให้แก้ตาราง profiles ตรงๆ เพราะ RPC แก้ได้แค่
+     avatar_url ของตัวเองเท่านั้น แก้ role/status ตัวเองไม่ได้)
+   - รหัสผ่าน: ต้องยืนยันรหัสผ่านเดิมก่อน (re-authenticate) แล้วค่อยเปลี่ยน
+     ผ่าน Supabase Auth โดยตรง ไม่ต้องพึ่ง Edge Function เลย
+================================================================ */
+const MyProfile = {
+  pendingAvatar: null,
+  open(){
+    this.pendingAvatar = null;
+    document.getElementById('modalRoot').innerHTML = `<div class="modal-bg"><div class="modal">
+      <div class="modal-head"><h3>โปรไฟล์ของฉัน</h3><button class="modal-close" onclick="UI.closeModal()">✕</button></div>
+      <div class="field" style="text-align:center;">
+        <div class="avatar-thumb" id="mp_avatarPreview" style="width:80px;height:80px;font-size:26px;margin:0 auto 8px;">${App.user.avatar_url ? `<img src="${App.user.avatar_url}">` : UI.esc((App.user.fullname||'?').trim().charAt(0))}</div>
+        <button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById('mp_avatarInput').click()">📷 เปลี่ยนรูปโปรไฟล์</button>
+        <input type="file" id="mp_avatarInput" accept="image/*" class="hidden" onchange="MyProfile.pickAvatar(this.files[0])">
+      </div>
+      <p style="text-align:center;font-weight:700;margin-top:6px;">${UI.esc(App.user.fullname)}</p>
+      <p style="text-align:center;color:var(--text-mute);font-size:13px;margin-bottom:16px;">@${UI.esc(App.user.username)} • ${App.user.role==='admin'?'ผู้ดูแลระบบ':'เจ้าหน้าที่ รปภ.'}</p>
+      <button class="btn btn-outline btn-block" style="margin-bottom:16px;" id="mp_saveAvatarBtn" onclick="MyProfile.saveAvatar()" disabled>💾 บันทึกรูปโปรไฟล์</button>
+
+      <div class="section-title">เปลี่ยนรหัสผ่าน</div>
+      <div class="field"><label>รหัสผ่านเดิม</label><input type="password" id="mp_oldpw"></div>
+      <div class="field"><label>รหัสผ่านใหม่ (อย่างน้อย 6 ตัวอักษร)</label><input type="password" id="mp_newpw"></div>
+      <div class="field"><label>ยืนยันรหัสผ่านใหม่</label><input type="password" id="mp_newpw2"></div>
+      <button class="btn btn-primary btn-block" id="mp_pwBtn" onclick="MyProfile.changePassword()">🔒 เปลี่ยนรหัสผ่าน</button>
+    </div></div>`;
+  },
+  pickAvatar(file){
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      const img = new Image();
+      img.onload = () => {
+        const maxW = 400;
+        let w = img.width, h = img.height;
+        if(w > maxW){ h = Math.round(h*(maxW/w)); w = maxW; }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img,0,0,w,h);
+        this.pendingAvatar = canvas.toDataURL('image/jpeg', 0.85);
+        document.getElementById('mp_avatarPreview').innerHTML = `<img src="${this.pendingAvatar}">`;
+        document.getElementById('mp_saveAvatarBtn').disabled = false;
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  },
+  async saveAvatar(){
+    if(!this.pendingAvatar){ UI.toast('กรุณาเลือกรูปก่อน','err'); return; }
+    UI.showLoading(true);
+    try {
+      const blob = await dataUrlToBlob(this.pendingAvatar);
+      const path = `${App.user.id}/avatar_${Date.now()}.jpg`;
+      const { error: upErr } = await sb.storage.from('avatars').upload(path, blob, { contentType:'image/jpeg', upsert:true });
+      if(upErr) throw upErr;
+      const { data: pub } = sb.storage.from('avatars').getPublicUrl(path);
+      const { error } = await sb.rpc('update_my_avatar', { new_avatar_url: pub.publicUrl });
+      if(error) throw error;
+      App.user.avatar_url = pub.publicUrl;
+      UI.showLoading(false);
+      UI.toast('บันทึกรูปโปรไฟล์สำเร็จ','ok');
+      Dashboard.refresh();
+      UI.closeModal();
+    } catch(e){
+      UI.showLoading(false);
+      UI.toast('บันทึกไม่สำเร็จ: ' + e.message, 'err');
+    }
+  },
+  async changePassword(){
+    const oldpw = document.getElementById('mp_oldpw').value;
+    const newpw = document.getElementById('mp_newpw').value;
+    const newpw2 = document.getElementById('mp_newpw2').value;
+    if(!oldpw || !newpw){ UI.toast('กรุณากรอกให้ครบ','err'); return; }
+    if(newpw !== newpw2){ UI.toast('รหัสผ่านใหม่ไม่ตรงกัน','err'); return; }
+    if(newpw.length < 6){ UI.toast('รหัสผ่านใหม่ต้องมีอย่างน้อย 6 ตัวอักษร','err'); return; }
+
+    const btn = document.getElementById('mp_pwBtn');
+    btn.disabled = true;
+    UI.showLoading(true);
+
+    // ✅ ยืนยันตัวตนด้วยรหัสผ่านเดิมก่อนเสมอ (re-authenticate) ป้องกันกรณีลืมล็อกเอาท์บนเครื่องคนอื่น
+    const { error: reauthErr } = await sb.auth.signInWithPassword({
+      email: usernameToEmail(App.user.username), password: oldpw
+    });
+    if(reauthErr){
+      UI.showLoading(false); btn.disabled = false;
+      UI.toast('รหัสผ่านเดิมไม่ถูกต้อง','err');
+      return;
+    }
+
+    const { error } = await sb.auth.updateUser({ password: newpw });
+    UI.showLoading(false); btn.disabled = false;
+    if(error){ UI.toast('เปลี่ยนรหัสผ่านไม่สำเร็จ: ' + error.message, 'err'); return; }
+    UI.toast('เปลี่ยนรหัสผ่านสำเร็จ','ok');
+    UI.closeModal();
+  }
+};
+
+/* ================================================================
+   CHARTS UI (Chart.js) — ใช้ทำกราฟใน Dashboard สำหรับ Admin
+================================================================ */
+const ChartsUI = {
+  instances: {},
+  destroy(canvasId){
+    if(this.instances[canvasId]){ this.instances[canvasId].destroy(); delete this.instances[canvasId]; }
+  },
+  chartColors(){
+    const style = getComputedStyle(document.body);
+    return {
+      accent: style.getPropertyValue('--accent').trim() || '#0d9488',
+      text: style.getPropertyValue('--text-mute').trim() || '#5c7a76',
+      grid: style.getPropertyValue('--border').trim() || '#d9ece9'
+    };
+  },
+  renderBarChart(canvasId, labels, data){
+    this.destroy(canvasId);
+    const c = this.chartColors();
+    const ctx = document.getElementById(canvasId);
+    if(!ctx) return;
+    this.instances[canvasId] = new Chart(ctx, {
+      type: 'bar',
+      data: { labels, datasets: [{ data, backgroundColor: c.accent, borderRadius: 6 }] },
+      options: {
+        responsive: true,
+        plugins: { legend: { display:false } },
+        scales: {
+          x: { ticks:{ color:c.text, autoSkip:false, maxRotation:60, minRotation:0 }, grid:{ display:false } },
+          y: { beginAtZero:true, ticks:{ color:c.text, precision:0 }, grid:{ color:c.grid } }
+        }
+      }
+    });
+  },
+  renderLineChart(canvasId, labels, data){
+    this.destroy(canvasId);
+    const c = this.chartColors();
+    const ctx = document.getElementById(canvasId);
+    if(!ctx) return;
+    this.instances[canvasId] = new Chart(ctx, {
+      type: 'line',
+      data: { labels, datasets: [{ data, borderColor: c.accent, backgroundColor: c.accent + '33', fill:true, tension:0.3, pointRadius:3 }] },
+      options: {
+        responsive: true,
+        plugins: { legend: { display:false } },
+        scales: {
+          x: { ticks:{ color:c.text }, grid:{ display:false } },
+          y: { beginAtZero:true, ticks:{ color:c.text, precision:0 }, grid:{ color:c.grid } }
+        }
+      }
+    });
+  }
+};
+
 const Dashboard = {
   todayStr(){ return new Date().toISOString().split('T')[0]; },
   currentShiftLabel(){
@@ -952,14 +1125,43 @@ const Dashboard = {
         'ยังไม่มีรายงานสำหรับกะ "' + shiftNow + '" ของวันนี้ — กดบันทึกรายงานได้เลย';
     } else { box.classList.add('hidden'); }
 
+    // ✅ แจ้งเตือนเอกสารรถ (พรบ./ภาษี) ที่หมดอายุแล้วหรือใกล้หมดอายุใน 30 วัน
+    // แสดงให้ทุกคนเห็น เพราะเป็นประโยชน์ทั้งกับ Admin (เชิงรุก) และ รปภ. หน้างาน (เชิงรับ)
+    const warnDate = new Date(); warnDate.setDate(warnDate.getDate() + 30);
+    const warnStr = warnDate.toISOString().split('T')[0];
+    const { count: expiredCount } = await sb.from('vehicles').select('id', { count:'exact', head:true })
+      .eq('status','active').lt('doc_expiry', this.todayStr());
+    const { count: expiringSoonCount } = await sb.from('vehicles').select('id', { count:'exact', head:true })
+      .eq('status','active').gte('doc_expiry', this.todayStr()).lte('doc_expiry', warnStr);
+    const vBox = document.getElementById('vehicleAlert');
+    if((expiredCount||0) > 0 || (expiringSoonCount||0) > 0){
+      vBox.classList.remove('hidden');
+      const parts = [];
+      if(expiredCount) parts.push(expiredCount + ' คันหมดอายุแล้ว');
+      if(expiringSoonCount) parts.push(expiringSoonCount + ' คันใกล้หมดอายุใน 30 วัน');
+      document.getElementById('vehicleAlertText').textContent = 'เอกสารรถ: ' + parts.join(', ') + ' — กดเพื่อดูรายละเอียด';
+    } else { vBox.classList.add('hidden'); }
+
     if(App.user.role === 'admin' && stats.byType){
-      const items = Object.entries(stats.byType).sort((a,b)=>b[1]-a[1]).slice(0,5);
+      const items = Object.entries(stats.byType).sort((a,b)=>b[1]-a[1]).slice(0,8);
       const extra = document.getElementById('statExtra');
       if(items.length){
-        extra.innerHTML = `<div class="section-title">สรุปเหตุการณ์เดือนนี้ (Top 5)</div>
-          <div class="card">${items.map(([k,v])=>`<div class="row-between" style="padding:6px 0;border-bottom:1px solid var(--border);">
-            <span>${UI.esc(k)}</span><b>${v}</b></div>`).join('')}</div>`;
+        extra.innerHTML = `<div class="section-title">สรุปเหตุการณ์เดือนนี้ (Top 8)</div>
+          <div class="card"><canvas id="byTypeChart" height="180"></canvas></div>`;
+        ChartsUI.renderBarChart('byTypeChart', items.map(i=>i[0]), items.map(i=>i[1]));
       } else { extra.innerHTML = ''; }
+
+      // กราฟแนวโน้มรายงาน 14 วันล่าสุด
+      document.getElementById('trendChartWrap').classList.remove('hidden');
+      const { data: trend } = await sb.rpc('get_reports_trend', { days_back: 14 });
+      if(trend){
+        ChartsUI.renderLineChart('trendChart',
+          trend.map(t => dateTh(t.report_date).split(' ').slice(0,2).join(' ')),
+          trend.map(t => t.cnt)
+        );
+      }
+    } else {
+      document.getElementById('trendChartWrap').classList.add('hidden');
     }
   }
 };
@@ -1367,6 +1569,10 @@ function dateTh(dateStr){
 const ReportList = {
   all: [],
   selected: new Set(),
+  pageSize: 30,
+  offset: 0,
+  hasMore: false,
+  searchTimer: null,
 
   reset(){
     document.getElementById('fl_search').value = '';
@@ -1379,24 +1585,14 @@ const ReportList = {
     this.load();
   },
 
-  async load(){
-    Filters.fillSelect('fl_shift', (App.config && App.config.shifts) || [], true, 'ทุกกะ');
-    Filters.fillSelect('fl_location', (App.config && App.config.locations) || [], true, 'ทุกสถานที่');
-    Filters.fillSelect('fl_type', (App.config && App.config.incident_types) || [], true, 'ทุกประเภทเหตุการณ์');
-    document.getElementById('exportBtn').classList.toggle('hidden', App.user.role !== 'admin');
-    // ✅ รปภ. ไม่ต้องเห็นตัวกรองสถานะ (รอตรวจสอบ/ส่งแล้ว) เพราะไม่ใช่เรื่องที่ต้องกังวล — เป็นหน้าที่ Admin
-    document.getElementById('fl_status_wrap').classList.toggle('hidden', App.user.role !== 'admin');
-    if(App.user.role !== 'admin') document.getElementById('fl_status').value = '';
+  debouncedSearch(){
+    clearTimeout(this.searchTimer);
+    this.searchTimer = setTimeout(() => this.load(), 350);
+  },
 
-    this.clearSelection();
-    const box = document.getElementById('reportListBox');
-    box.innerHTML = `<div class="empty-state"><div class="ic">⏳</div><p>กำลังโหลดรายการ...</p></div>`;
-    UI.showLoading(true);
-
+  buildQuery(){
     let q = sb.from('reports').select('*');
     // ✅ ถ้าไม่ใช่ admin ไม่จำเป็นต้องกรอง officer_id เองด้วยซ้ำ — RLS จะกรองให้อัตโนมัติ
-    // (แต่ query ที่ระบุเงื่อนไขชัดเจนก็ยังทำงานถูกต้องเหมือนเดิม เพราะ RLS ครอบอยู่ชั้นล่างสุด)
-
     const search = document.getElementById('fl_search').value.trim();
     const from = document.getElementById('fl_from').value;
     const to = document.getElementById('fl_to').value;
@@ -1412,10 +1608,25 @@ const ReportList = {
     if(location) q = q.eq('location', location);
     if(type) q = q.eq('incident_type', type);
     if(search) q = q.or(`location.ilike.%${search}%,incident_type.ilike.%${search}%,description.ilike.%${search}%`);
+    return q.order('date', { ascending:false }).order('created_at', { ascending:false });
+  },
 
-    q = q.order('date', { ascending:false }).order('created_at', { ascending:false }).limit(200);
+  async load(){
+    Filters.fillSelect('fl_shift', (App.config && App.config.shifts) || [], true, 'ทุกกะ');
+    Filters.fillSelect('fl_location', (App.config && App.config.locations) || [], true, 'ทุกสถานที่');
+    Filters.fillSelect('fl_type', (App.config && App.config.incident_types) || [], true, 'ทุกประเภทเหตุการณ์');
+    document.getElementById('exportBtn').classList.toggle('hidden', App.user.role !== 'admin');
+    // ✅ รปภ. ไม่ต้องเห็นตัวกรองสถานะ (รอตรวจสอบ/ส่งแล้ว) เพราะไม่ใช่เรื่องที่ต้องกังวล — เป็นหน้าที่ Admin
+    document.getElementById('fl_status_wrap').classList.toggle('hidden', App.user.role !== 'admin');
+    if(App.user.role !== 'admin') document.getElementById('fl_status').value = '';
 
-    const { data, error } = await q;
+    this.clearSelection();
+    this.offset = 0;
+    const box = document.getElementById('reportListBox');
+    box.innerHTML = `<div class="empty-state"><div class="ic">⏳</div><p>กำลังโหลดรายการ...</p></div>`;
+    UI.showLoading(true);
+
+    const { data, error } = await this.buildQuery().range(0, this.pageSize - 1);
     UI.showLoading(false);
 
     if(error){
@@ -1423,6 +1634,20 @@ const ReportList = {
       return;
     }
     this.all = data || [];
+    this.offset = this.all.length;
+    this.hasMore = this.all.length === this.pageSize;
+    this.render();
+  },
+
+  async loadMore(){
+    const btn = document.getElementById('rl_loadMoreBtn');
+    btn.disabled = true; btn.textContent = 'กำลังโหลด...';
+    const { data, error } = await this.buildQuery().range(this.offset, this.offset + this.pageSize - 1);
+    btn.disabled = false; btn.textContent = 'โหลดเพิ่มเติม';
+    if(error){ UI.toast('โหลดเพิ่มเติมไม่สำเร็จ: ' + error.message, 'err'); return; }
+    this.all = this.all.concat(data || []);
+    this.offset = this.all.length;
+    this.hasMore = (data || []).length === this.pageSize;
     this.render();
   },
 
@@ -1440,6 +1665,7 @@ const ReportList = {
     if(!this.all.length){
       box.innerHTML = `<div class="empty-state"><div class="ic">📭</div><p>ไม่พบรายงานตามเงื่อนไขที่เลือก</p></div>`;
       this.updateBulkBar();
+      document.getElementById('rl_loadMoreBtn').classList.add('hidden');
       return;
     }
     box.innerHTML = '';
@@ -1482,6 +1708,7 @@ const ReportList = {
       box.appendChild(card);
     });
     this.updateBulkBar();
+    document.getElementById('rl_loadMoreBtn').classList.toggle('hidden', !this.hasMore);
   },
 
   toggleSelect(id, checked){
@@ -1530,7 +1757,30 @@ const ReportList = {
           ${isAdmin ? `<button class="btn btn-success" onclick="ReportList.sendMail('${r.id}')">✉️ ส่งอีเมลจริง</button>` : '<div></div>'}
           ${isAdmin ? `<button class="btn btn-danger" onclick="ReportList.remove('${r.id}')">🗑️ ลบ</button>` : '<div></div>'}
         </div>
+        ${canEdit ? `<button class="btn btn-outline btn-block" style="margin-top:10px;" onclick="ReportList.showHistory('${r.id}')">🕘 ดูประวัติการแก้ไข</button>` : ''}
       </div></div>`;
+  },
+
+  async showHistory(reportId){
+    UI.showLoading(true);
+    const { data, error } = await sb
+      .from('report_edit_history')
+      .select('*, profiles:edited_by(fullname)')
+      .eq('report_id', reportId)
+      .order('edited_at', { ascending:false });
+    UI.showLoading(false);
+    if(error){ UI.toast('โหลดประวัติไม่สำเร็จ: ' + error.message, 'err'); return; }
+    const rows = data || [];
+    document.getElementById('modalRoot').innerHTML = `<div class="modal-bg"><div class="modal">
+      <div class="modal-head"><h3>ประวัติการแก้ไข</h3><button class="modal-close" onclick="UI.closeModal()">✕</button></div>
+      ${rows.length ? rows.map(h => `
+        <div class="card" style="margin-bottom:10px;">
+          <div class="meta" style="margin-bottom:8px;">🕐 ${new Date(h.edited_at).toLocaleString('th-TH')} • แก้ไขโดย ${UI.esc(h.profiles?.fullname || 'ไม่ทราบ')}</div>
+          <div class="print-row"><span class="l">รายละเอียดเดิม</span><span class="rte-view">${toRichHtml(h.old_description)}</span></div>
+          <div class="print-row"><span class="l">การดำเนินการเดิม</span><span class="rte-view">${toRichHtml(h.old_action_taken)}</span></div>
+        </div>`).join('') : '<p class="hint" style="text-align:center;padding:20px 0;">ยังไม่เคยมีการแก้ไขรายงานนี้</p>'}
+      <button class="btn btn-outline btn-block" onclick="ReportList.openDetail(window._RC['${reportId}'])">← กลับไปหน้ารายละเอียด</button>
+    </div></div>`;
   },
 
   sendMail(id){
@@ -1847,6 +2097,7 @@ const Settings = {
     this.data = {
       org_name: c.org_name || '',
       email_recipients: c.email_recipients || '',
+      email_from: c.email_from || '',
       shifts: c.shifts || [],
       incident_types: c.incident_types || [],
       locations: c.locations || [],
@@ -1855,6 +2106,7 @@ const Settings = {
     };
     document.getElementById('cfg_org').value = this.data.org_name;
     document.getElementById('cfg_emails').value = this.data.email_recipients;
+    document.getElementById('cfg_emailfrom').value = this.data.email_from;
     ['shifts','incident_types','locations','quick_phrases_desc','quick_phrases_action'].forEach(k => this.renderChips(k));
   },
   renderChips(key){
@@ -1880,6 +2132,7 @@ const Settings = {
     const payload = {
       org_name: document.getElementById('cfg_org').value.trim(),
       email_recipients: document.getElementById('cfg_emails').value.trim(),
+      email_from: document.getElementById('cfg_emailfrom').value.trim(),
       shifts: this.data.shifts,
       incident_types: this.data.incident_types,
       locations: this.data.locations,
@@ -1894,6 +2147,15 @@ const Settings = {
     if(error){ UI.toast('บันทึกไม่สำเร็จ: ' + error.message, 'err'); return; }
     UI.toast('บันทึกการตั้งค่าสำเร็จ','ok');
     await Config.load();
+  },
+  async testEmail(){
+    const to = document.getElementById('cfg_testEmailTo').value.trim();
+    if(!to){ UI.toast('กรุณากรอกอีเมลที่จะทดสอบส่ง','err'); return; }
+    UI.showLoading(true);
+    const res = await callAdminApi('test_email', { to });
+    UI.showLoading(false);
+    if(!res.success){ UI.toast(res.error, 'err'); return; }
+    UI.toast('ส่งอีเมลทดสอบสำเร็จ! ลองเช็คกล่องขาเข้า (หรือ Junk/Spam) ของ ' + to, 'ok');
   },
   async cleanupNow(){
     if(!confirm('ต้องการลบรายงานที่ส่งอีเมลแล้วและ Log ที่เก่ากว่า 30 วันตอนนี้เลยหรือไม่?')) return;
@@ -1910,6 +2172,9 @@ const Settings = {
 ================================================================ */
 const Logs = {
   all: [],
+  pageSize: 100,
+  offset: 0,
+  hasMore: false,
   actionLabel(a){
     const map = {
       LOGIN:'เข้าสู่ระบบ', LOGOUT:'ออกจากระบบ',
@@ -1919,15 +2184,33 @@ const Logs = {
     return map[a] || a;
   },
   async load(){
+    this.offset = 0;
     UI.showLoading(true);
     const { data, error } = await sb
       .from('logs')
       .select('*, profiles:user_id(fullname)')
       .order('timestamp', { ascending:false })
-      .limit(500);
+      .range(0, this.pageSize - 1);
     UI.showLoading(false);
     if(error){ UI.toast('โหลด Log ไม่สำเร็จ: ' + error.message, 'err'); return; }
     this.all = data || [];
+    this.offset = this.all.length;
+    this.hasMore = this.all.length === this.pageSize;
+    this.render();
+  },
+  async loadMore(){
+    const btn = document.getElementById('lg_loadMoreBtn');
+    btn.disabled = true; btn.textContent = 'กำลังโหลด...';
+    const { data, error } = await sb
+      .from('logs')
+      .select('*, profiles:user_id(fullname)')
+      .order('timestamp', { ascending:false })
+      .range(this.offset, this.offset + this.pageSize - 1);
+    btn.disabled = false; btn.textContent = 'โหลดเพิ่มเติม';
+    if(error){ UI.toast('โหลดเพิ่มเติมไม่สำเร็จ: ' + error.message, 'err'); return; }
+    this.all = this.all.concat(data || []);
+    this.offset = this.all.length;
+    this.hasMore = (data || []).length === this.pageSize;
     this.render();
   },
   render(){
@@ -1941,7 +2224,8 @@ const Logs = {
         <td>${UI.esc(this.actionLabel(l.action))}</td>
         <td>${UI.esc(l.detail || '')}</td>
       </tr>`).join('') || `<tr><td colspan="4" style="text-align:center;color:var(--text-mute);">ไม่พบข้อมูล</td></tr>`;
-    document.getElementById('lg_count').textContent = 'แสดง ' + filtered.length + ' จาก ' + this.all.length + ' รายการล่าสุด';
+    document.getElementById('lg_count').textContent = 'แสดง ' + filtered.length + ' จาก ' + this.all.length + ' รายการที่โหลดแล้ว';
+    document.getElementById('lg_loadMoreBtn').classList.toggle('hidden', !this.hasMore);
   }
 };
 
@@ -2085,6 +2369,7 @@ const Vehicles = {
     const isAdmin = App.user.role === 'admin';
     document.getElementById('vhAddBtn').classList.toggle('hidden', !isAdmin);
     document.getElementById('vhImportBtn').classList.toggle('hidden', !isAdmin);
+    document.getElementById('vhExportBtn').classList.toggle('hidden', !isAdmin);
     document.getElementById('vh_search').value = '';
     document.getElementById('vh_type').value = '';
     document.getElementById('vh_status').value = '';
@@ -2122,14 +2407,18 @@ const Vehicles = {
       return;
     }
     const isAdmin = App.user.role === 'admin';
+    // 🔒 ปิดการแสดงรูปถ่ายเอกสารไว้ก่อนชั่วคราว เพราะลิงก์ Google Drive ที่นำเข้ามา
+    // ยังไม่ได้ตั้งค่าแชร์แบบสาธารณะ ทำให้โหลดรูปไม่ขึ้น (ข้อมูลลิงก์ยังอยู่ในฐานข้อมูลตามเดิม
+    // แค่ไม่ render ออกมาเฉยๆ — เปลี่ยนกลับเป็น true ได้ทันทีเมื่อพร้อม)
+    const SHOW_VEHICLE_PHOTOS = false;
     box.innerHTML = this.all.map(v => {
       const doc = this.docStatus(v.doc_expiry);
       const blocked = v.status === 'blocked';
-      const photos = [
+      const photos = SHOW_VEHICLE_PHOTOS ? [
         { url: this.resolvePhotoUrl(v.photo_license_url), label:'ใบขับขี่' },
         { url: this.resolvePhotoUrl(v.photo_registration_url), label:'ทะเบียนรถ' },
         { url: this.resolvePhotoUrl(v.photo_tax_url), label:'พรบ./ภาษี' }
-      ].filter(p => p.url);
+      ].filter(p => p.url) : [];
       return `
         <div class="vh-card ${blocked ? 'vh-blocked' : ''}">
           <div class="vh-top">
@@ -2395,6 +2684,24 @@ const Vehicles = {
     UI.toast('นำเข้าข้อมูลสำเร็จ ' + rows.length + ' รายการ', 'ok');
     UI.closeModal();
     this.search();
+  },
+
+  exportCsv(){
+    if(!this.all.length){ UI.toast('ไม่มีข้อมูลให้ส่งออก (ตามตัวกรองที่ค้นหาอยู่)','err'); return; }
+    let csv = '\ufeffชื่อ-นามสกุล,รหัสพนักงาน,สถานะพนักงาน,เบอร์โทร,โรงงาน,แผนก,ประเภทรถ,ยี่ห้อ,ทะเบียนรถ,วันหมดอายุพรบ/ภาษี,สถานะ,หมายเหตุ\n';
+    this.all.forEach(v => {
+      csv += [
+        v.owner_name, v.employee_code, v.employee_status, v.phone, v.factory_site, v.department,
+        v.vehicle_type, v.vehicle_brand, v.plate_number, v.doc_expiry || '',
+        v.status === 'blocked' ? 'ระงับ' : 'อนุญาต',
+        '"' + (v.notes||'').replace(/"/g,'""') + '"'
+      ].join(',') + '\n';
+    });
+    const blob = new Blob([csv], { type:'text/csv;charset=utf-8;' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'ข้อมูลรถ_' + Dashboard.todayStr() + '.csv';
+    document.body.appendChild(a); a.click(); a.remove();
   }
 };
 
