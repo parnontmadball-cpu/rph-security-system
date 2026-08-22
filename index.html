@@ -207,6 +207,13 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);}
 .vh-import-preview table{width:100%;border-collapse:collapse;font-size:12.5px;}
 .vh-import-preview th,.vh-import-preview td{padding:6px 8px;border-bottom:1px solid var(--border);text-align:right;white-space:nowrap;}
 .vh-import-preview tr.row-error{background:var(--red-bg);}
+.vh-docphoto-row{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;}
+.vh-docphoto{width:64px;height:64px;border-radius:8px;overflow:hidden;border:1px solid var(--border);background:var(--surface-3);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;cursor:pointer;}
+.vh-docphoto img{width:100%;height:100%;object-fit:cover;}
+.vh-photo-slot{text-align:center;}
+.vh-photo-slot .vh-photo-box{width:100%;aspect-ratio:1;border-radius:10px;border:1.5px dashed var(--border);background:var(--surface-2);display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative;cursor:pointer;}
+.vh-photo-slot .vh-photo-box img{width:100%;height:100%;object-fit:cover;}
+.vh-photo-slot label{font-size:12px;color:var(--text-mute);display:block;margin-top:4px;}
 .alert-pending{background:var(--amber-bg); color:var(--amber); border-radius:var(--radius); padding:14px 16px; margin-bottom:16px; font-size:13.5px; font-weight:600; display:flex; gap:10px; align-items:flex-start;}
 .stat-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:6px;}
 .stat-box{background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:14px 8px; text-align:center;}
@@ -642,7 +649,6 @@ table.data-table td{padding:9px 6px; border-bottom:1px solid var(--border); vert
     </main>
   </div>
 
-  <!-- ===================== CONTACTS (เบอร์โทรศัพท์ภายใน) ===================== -->
   <!-- ===================== VEHICLE DOCUMENT CHECK ===================== -->
   <div class="view hidden" id="view-vehicles">
     <div class="topbar">
@@ -654,7 +660,7 @@ table.data-table td{padding:9px 6px; border-bottom:1px solid var(--border); vert
     <main class="view">
       <div class="card">
         <div class="filter-bar">
-          <input type="text" id="vh_search" placeholder="🔍 ค้นหาทะเบียน / ชื่อเจ้าของ..." class="full" oninput="Vehicles.debouncedSearch()">
+          <input type="text" id="vh_search" placeholder="🔍 ค้นหาทะเบียน / ชื่อ / รหัสพนักงาน..." class="full" oninput="Vehicles.debouncedSearch()">
           <select id="vh_type"><option value="">ทุกประเภท</option><option value="motorcycle">🏍️ รถจักรยานยนต์</option><option value="car">🚗 รถยนต์</option></select>
           <select id="vh_status"><option value="">ทุกสถานะ</option><option value="active">✅ อนุญาต</option><option value="blocked">⛔ ระงับ</option></select>
         </div>
@@ -2037,21 +2043,26 @@ const Contacts = {
 };
 
 /* ================================================================
-   VEHICLE DOCUMENT CHECK (whitelist + วันหมดอายุภาษี/ประกัน)
+   VEHICLE DOCUMENT CHECK — ทะเบียนพนักงาน+รถ (whitelist + วันหมดอายุ พรบ./ภาษี)
    ──────────────────────────────────────────────────────────────
    ทุกคนที่ login แล้วค้นหา/ดูได้ (RLS select ให้ authenticated ทั้งหมด)
    เพิ่ม/แก้/ลบ/นำเข้าข้อมูล เป็นสิทธิ์ Admin เท่านั้น (RLS บังคับอีกชั้น)
+   โครงสร้างคอลัมน์อ้างอิงจากฟอร์ม Google Form จริงของบริษัท
 ================================================================ */
+const VEHICLE_DOCS_FOLDER = 'vehicle-docs'; // โฟลเดอร์ย่อยใน bucket report-images
+
 const Vehicles = {
   all: [],
   searchTimer: null,
+  pendingPhotos: {}, // เก็บรูปที่เพิ่งถ่าย/เลือกไว้ชั่วคราวก่อนกดบันทึก { license, registration, tax }
 
-  typeIcon(t){ return t === 'motorcycle' ? '🏍️' : '🚗'; },
-  typeLabel(t){ return t === 'motorcycle' ? 'รถจักรยานยนต์' : 'รถยนต์'; },
+  typeIcon(t){
+    if(!t) return '🚗';
+    if(/จักรยานยนต์|มอเตอร์ไซค์|มอไซค์/i.test(t)) return '🏍️';
+    return '🚗';
+  },
 
-  // ── คำนวณสถานะเอกสาร (หมดอายุ/ใกล้หมดอายุ/ปกติ/ไม่มีข้อมูล) ──
-  // ⚠️ เทียบวันแบบ string ตรงๆ (YYYY-MM-DD) ไม่ใช้ new Date(dateStr) เพื่อกัน
-  // ปัญหา timezone เพี้ยนตามบทเรียนที่เคยเจอมา
+  // ⚠️ เทียบวันแบบ string ตรงๆ (YYYY-MM-DD) ไม่ใช้ new Date(dateStr) เพื่อกันปัญหา timezone
   docStatus(expiryDateStr){
     if(!expiryDateStr) return { cls:'vh-doc-none', label:'ไม่มีข้อมูล' };
     const today = Dashboard.todayStr();
@@ -2060,6 +2071,14 @@ const Vehicles = {
     if(expiryDateStr < today) return { cls:'vh-doc-expired', label:'⛔ หมดอายุแล้ว (' + dateTh(expiryDateStr) + ')' };
     if(expiryDateStr <= warnStr) return { cls:'vh-doc-warn', label:'⚠️ ใกล้หมดอายุ (' + dateTh(expiryDateStr) + ')' };
     return { cls:'vh-doc-ok', label:'✅ ปกติ (' + dateTh(expiryDateStr) + ')' };
+  },
+
+  // ลิงก์รูป: ถ้าเป็น path ของ Supabase Storage (ไม่มี http) แปลงเป็น public URL
+  // ถ้าเป็นลิงก์ Google Drive เดิม (ขึ้นต้นด้วย http) ใช้ตรงๆ เลย
+  resolvePhotoUrl(val){
+    if(!val) return '';
+    if(/^https?:\/\//i.test(val)) return val;
+    return storagePathToPublicUrl(val);
   },
 
   async load(){
@@ -2083,9 +2102,11 @@ const Vehicles = {
     const status = document.getElementById('vh_status').value;
     const box = document.getElementById('vehiclesBox');
 
-    let query = sb.from('vehicles').select('*').order('plate_number', { ascending:true }).limit(100);
-    if(q) query = query.or(`plate_number.ilike.%${q}%,owner_name.ilike.%${q}%`);
-    if(type) query = query.eq('vehicle_type', type);
+    let query = sb.from('vehicles').select('*').order('owner_name', { ascending:true }).limit(100);
+    if(q) query = query.or(`plate_number.ilike.%${q}%,owner_name.ilike.%${q}%,employee_code.ilike.%${q}%`);
+    // ✅ ใช้ "รถยนต์" (ทั้งคำ) ไม่ใช่แค่ "ยนต์" เพราะ "ยนต์" เป็นคำย่อยที่อยู่ใน
+    // "รถจักรยานยนต์" ด้วย จะทำให้กรอง "รถยนต์" แล้วเจอรถจักรยานยนต์ปนมาผิดๆ
+    if(type) query = query.ilike('vehicle_type', `%${type === 'motorcycle' ? 'จักรยานยนต์' : 'รถยนต์'}%`);
     if(status) query = query.eq('status', status);
 
     const { data, error } = await query;
@@ -2097,28 +2118,37 @@ const Vehicles = {
   render(){
     const box = document.getElementById('vehiclesBox');
     if(!this.all.length){
-      box.innerHTML = `<div class="empty-state"><div class="ic">🚫</div><p>ไม่พบข้อมูลรถที่ค้นหา</p></div>`;
+      box.innerHTML = `<div class="empty-state"><div class="ic">🚫</div><p>ไม่พบข้อมูลที่ค้นหา</p></div>`;
       return;
     }
     const isAdmin = App.user.role === 'admin';
     box.innerHTML = this.all.map(v => {
-      const tax = this.docStatus(v.tax_expiry);
-      const ins = this.docStatus(v.insurance_expiry);
+      const doc = this.docStatus(v.doc_expiry);
       const blocked = v.status === 'blocked';
+      const photos = [
+        { url: this.resolvePhotoUrl(v.photo_license_url), label:'ใบขับขี่' },
+        { url: this.resolvePhotoUrl(v.photo_registration_url), label:'ทะเบียนรถ' },
+        { url: this.resolvePhotoUrl(v.photo_tax_url), label:'พรบ./ภาษี' }
+      ].filter(p => p.url);
       return `
         <div class="vh-card ${blocked ? 'vh-blocked' : ''}">
           <div class="vh-top">
             <div>
-              <div class="vh-plate">${this.typeIcon(v.vehicle_type)} ${UI.esc(v.plate_number)} ${v.plate_province ? UI.esc(v.plate_province) : ''}</div>
-              <div class="vh-owner">${UI.esc(v.owner_name || 'ไม่ระบุเจ้าของ')}${v.department ? ' • ' + UI.esc(v.department) : ''}${v.owner_type ? ' (' + UI.esc(v.owner_type) + ')' : ''}</div>
+              <div class="vh-plate">${this.typeIcon(v.vehicle_type)} ${UI.esc(v.plate_number || 'ไม่ระบุทะเบียน')}</div>
+              <div class="vh-owner">${UI.esc(v.owner_name || 'ไม่ระบุชื่อ')}${v.employee_code ? ' • รหัส ' + UI.esc(v.employee_code) : ''}</div>
+              <div class="vh-owner">${UI.esc(v.department || '-')}${v.factory_site ? ' • ' + UI.esc(v.factory_site) : ''}${v.vehicle_brand ? ' • ' + UI.esc(v.vehicle_brand) : ''}</div>
             </div>
-            <span class="badge ${blocked ? 'badge-submitted' : 'badge-sent'}" style="${blocked?'background:var(--red-bg);color:var(--red);':''}">${blocked ? '⛔ ระงับ' : '✅ อนุญาต'}</span>
+            <span class="badge" style="${blocked?'background:var(--red-bg);color:var(--red);':'background:var(--green-bg);color:var(--green);'}">${blocked ? '⛔ ระงับ' : '✅ อนุญาต'}</span>
           </div>
           <div class="vh-doc-row">
-            <div class="vh-doc ${tax.cls}"><div class="l">ภาษี/พ.ร.บ.</div><div class="v">${tax.label}</div></div>
-            <div class="vh-doc ${ins.cls}"><div class="l">ประกันภัย</div><div class="v">${ins.label}</div></div>
+            <div class="vh-doc ${doc.cls}" style="flex:none;width:100%;"><div class="l">วันหมดอายุ พรบ./ภาษี</div><div class="v">${doc.label}</div></div>
           </div>
-          ${v.notes ? `<div class="meta" style="margin-top:8px;">📝 ${UI.esc(v.notes)}</div>` : ''}
+          ${v.consent_given === false ? `<div class="meta" style="margin-top:8px;color:var(--red);font-weight:700;">⚠️ ไม่ได้ให้ความยินยอม PDPA — ควรตรวจสอบสิทธิ์การเก็บข้อมูลก่อนใช้งาน</div>` : ''}
+          ${photos.length ? `<div class="vh-docphoto-row">${photos.map(p =>
+            `<div class="vh-docphoto" title="${UI.esc(p.label)}" onclick="window.open('${p.url}','_blank')"><img src="${p.url}" onerror="this.parentElement.innerHTML='📄'"></div>`
+          ).join('')}</div>` : ''}
+          ${v.documents_note ? `<div class="meta" style="margin-top:8px;">📝 ${UI.esc(v.documents_note)}</div>` : ''}
+          ${v.notes ? `<div class="meta">💬 ${UI.esc(v.notes)}</div>` : ''}
           ${isAdmin ? `<div class="btn-grid" style="margin-top:10px;">
             <button class="btn btn-sm btn-outline" onclick='Vehicles.openForm(${JSON.stringify(v).replace(/'/g,"&#39;")})'>แก้ไข</button>
             <button class="btn btn-sm btn-danger" onclick="Vehicles.remove(${v.id})">ลบ</button>
@@ -2129,51 +2159,124 @@ const Vehicles = {
 
   openForm(v){
     const isEdit = !!v;
-    document.getElementById('modalRoot').innerHTML = `<div class="modal-bg"><div class="modal">
-      <div class="modal-head"><h3>${isEdit?'แก้ไขข้อมูลรถ':'เพิ่มรถใหม่'}</h3><button class="modal-close" onclick="UI.closeModal()">✕</button></div>
-      <div class="field"><label>ประเภทรถ</label><select id="vf_type">
-        <option value="motorcycle" ${isEdit&&v.vehicle_type==='motorcycle'?'selected':''}>🏍️ รถจักรยานยนต์</option>
-        <option value="car" ${isEdit&&v.vehicle_type==='car'?'selected':''}>🚗 รถยนต์</option></select></div>
+    this.pendingPhotos = {};
+    const photoSlot = (key, label, existingUrl) => `
+      <div class="vh-photo-slot">
+        <div class="vh-photo-box" id="vfphoto_${key}_box" onclick="document.getElementById('vfphoto_${key}_input').click()">
+          ${existingUrl ? `<img src="${existingUrl}">` : '📷'}
+        </div>
+        <label>${label}</label>
+        <input type="file" id="vfphoto_${key}_input" accept="image/*" class="hidden" onchange="Vehicles.pickPhoto('${key}', this.files[0])">
+      </div>`;
+
+    document.getElementById('modalRoot').innerHTML = `<div class="modal-bg"><div class="modal" style="max-width:640px;">
+      <div class="modal-head"><h3>${isEdit?'แก้ไขข้อมูลพนักงาน/รถ':'เพิ่มพนักงาน/รถใหม่'}</h3><button class="modal-close" onclick="UI.closeModal()">✕</button></div>
+
+      <div class="section-title">ข้อมูลพนักงาน</div>
       <div class="form-grid-2">
-        <div class="field"><label>ทะเบียนรถ</label><input type="text" id="vf_plate" value="${isEdit?UI.esc(v.plate_number):''}"></div>
-        <div class="field"><label>จังหวัด</label><input type="text" id="vf_province" value="${isEdit?UI.esc(v.plate_province||''):''}"></div>
+        <div class="field"><label>ชื่อ-นามสกุล</label><input type="text" id="vf_owner" value="${isEdit?UI.esc(v.owner_name||''):''}"></div>
+        <div class="field"><label>รหัสพนักงาน</label><input type="text" id="vf_empcode" value="${isEdit?UI.esc(v.employee_code||''):''}"></div>
+        <div class="field"><label>เบอร์โทรศัพท์</label><input type="text" id="vf_phone" value="${isEdit?UI.esc(v.phone||''):''}"></div>
+        <div class="field"><label>สถานะพนักงาน</label><input type="text" id="vf_empstatus" value="${isEdit?UI.esc(v.employee_status||''):''}" placeholder="เช่น ทำงานอยู่ / ลาออกแล้ว"></div>
+        <div class="field"><label>ปฏิบัติงานที่โรงงาน</label><input type="text" id="vf_factory" value="${isEdit?UI.esc(v.factory_site||''):''}"></div>
+        <div class="field"><label>แผนก</label><input type="text" id="vf_department" value="${isEdit?UI.esc(v.department||''):''}"></div>
       </div>
-      <div class="field"><label>ชื่อเจ้าของ</label><input type="text" id="vf_owner" value="${isEdit?UI.esc(v.owner_name||''):''}"></div>
+      <div class="field"><label>ส่วนใหญ่เดินทางมาอย่างไร</label><input type="text" id="vf_commute" value="${isEdit?UI.esc(v.commute_method||''):''}"></div>
+
+      <div class="section-title">ข้อมูลรถ</div>
       <div class="form-grid-2">
-        <div class="field"><label>ประเภทเจ้าของ</label><input type="text" id="vf_ownertype" value="${isEdit?UI.esc(v.owner_type||''):''}" placeholder="เช่น พนักงาน / ผู้เยี่ยมชม"></div>
-        <div class="field"><label>หน่วยงาน/แผนก</label><input type="text" id="vf_department" value="${isEdit?UI.esc(v.department||''):''}"></div>
+        <div class="field"><label>ประเภทรถ</label><input type="text" id="vf_type" value="${isEdit?UI.esc(v.vehicle_type||''):''}" placeholder="เช่น รถยนต์ / รถจักรยานยนต์"></div>
+        <div class="field"><label>ยี่ห้อรถ</label><input type="text" id="vf_brand" value="${isEdit?UI.esc(v.vehicle_brand||''):''}"></div>
       </div>
       <div class="form-grid-2">
-        <div class="field"><label>วันหมดอายุภาษี/พ.ร.บ.</label><input type="date" id="vf_tax" value="${isEdit&&v.tax_expiry?v.tax_expiry:''}"></div>
-        <div class="field"><label>วันหมดอายุประกันภัย</label><input type="date" id="vf_insurance" value="${isEdit&&v.insurance_expiry?v.insurance_expiry:''}"></div>
+        <div class="field"><label>เลขทะเบียนรถ</label><input type="text" id="vf_plate" value="${isEdit?UI.esc(v.plate_number||''):''}" placeholder='เช่น กข-1234 หรือ "ป้ายแดง"'></div>
+        <div class="field"><label>วันหมดอายุ พรบ./ภาษี</label><input type="date" id="vf_docexpiry" value="${isEdit&&v.doc_expiry?v.doc_expiry:''}"></div>
       </div>
+      <div class="field"><label>เอกสารเกี่ยวกับรถ (หมายเหตุ)</label><input type="text" id="vf_docnote" value="${isEdit?UI.esc(v.documents_note||''):''}"></div>
+
+      <div class="section-title">รูปถ่ายเอกสาร</div>
+      <div class="form-grid-2" style="grid-template-columns:repeat(3,1fr);gap:10px;">
+        ${photoSlot('license', 'ใบขับขี่', isEdit ? this.resolvePhotoUrl(v.photo_license_url) : '')}
+        ${photoSlot('registration', 'ทะเบียนรถ', isEdit ? this.resolvePhotoUrl(v.photo_registration_url) : '')}
+        ${photoSlot('tax', 'พรบ./ภาษี', isEdit ? this.resolvePhotoUrl(v.photo_tax_url) : '')}
+      </div>
+
+      <div class="section-title">การควบคุมสิทธิ์เข้า-ออก</div>
       <div class="field"><label>สถานะ</label><select id="vf_status">
         <option value="active" ${isEdit&&v.status==='active'?'selected':''}>✅ อนุญาตเข้า-ออก</option>
         <option value="blocked" ${isEdit&&v.status==='blocked'?'selected':''}>⛔ ระงับ (แบล็คลิสต์)</option></select></div>
-      <div class="field"><label>หมายเหตุ</label><input type="text" id="vf_notes" value="${isEdit?UI.esc(v.notes||''):''}"></div>
-      <button class="btn btn-primary btn-block" onclick="Vehicles.submit(${isEdit?v.id:'null'})">บันทึก</button>
+      <div class="field"><label>หมายเหตุ (Admin)</label><input type="text" id="vf_notes" value="${isEdit?UI.esc(v.notes||''):''}"></div>
+
+      <button class="btn btn-primary btn-block" id="vf_submitBtn" onclick="Vehicles.submit(${isEdit?v.id:'null'})">บันทึก</button>
     </div></div>`;
+  },
+
+  pickPhoto(key, file){
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      const img = new Image();
+      img.onload = () => {
+        const maxW = 1000;
+        let w = img.width, h = img.height;
+        if(w > maxW){ h = Math.round(h*(maxW/w)); w = maxW; }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img,0,0,w,h);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+        this.pendingPhotos[key] = dataUrl;
+        document.getElementById('vfphoto_' + key + '_box').innerHTML = `<img src="${dataUrl}">`;
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
   },
 
   async submit(id){
     const data = {
-      vehicle_type: document.getElementById('vf_type').value,
-      plate_number: document.getElementById('vf_plate').value.trim(),
-      plate_province: document.getElementById('vf_province').value.trim(),
       owner_name: document.getElementById('vf_owner').value.trim(),
-      owner_type: document.getElementById('vf_ownertype').value.trim(),
+      employee_code: document.getElementById('vf_empcode').value.trim(),
+      phone: document.getElementById('vf_phone').value.trim(),
+      employee_status: document.getElementById('vf_empstatus').value.trim(),
+      factory_site: document.getElementById('vf_factory').value.trim(),
       department: document.getElementById('vf_department').value.trim(),
-      tax_expiry: document.getElementById('vf_tax').value || null,
-      insurance_expiry: document.getElementById('vf_insurance').value || null,
+      commute_method: document.getElementById('vf_commute').value.trim(),
+      vehicle_type: document.getElementById('vf_type').value.trim(),
+      vehicle_brand: document.getElementById('vf_brand').value.trim(),
+      plate_number: document.getElementById('vf_plate').value.trim(),
+      doc_expiry: document.getElementById('vf_docexpiry').value || null,
+      documents_note: document.getElementById('vf_docnote').value.trim(),
       status: document.getElementById('vf_status').value,
       notes: document.getElementById('vf_notes').value.trim()
     };
-    if(!data.plate_number){ UI.toast('กรุณากรอกทะเบียนรถ','err'); return; }
+    if(!data.owner_name || !data.plate_number){ UI.toast('กรุณากรอกชื่อและเลขทะเบียนรถอย่างน้อย','err'); return; }
+
+    const btn = document.getElementById('vf_submitBtn');
+    btn.disabled = true;
     UI.showLoading(true);
+
+    try {
+      // อัปโหลดรูปที่เพิ่งถ่าย/เลือกใหม่ (ถ้ามี) ขึ้น Supabase Storage
+      for(const key of ['license','registration','tax']){
+        if(this.pendingPhotos[key]){
+          const blob = await dataUrlToBlob(this.pendingPhotos[key]);
+          const path = `${VEHICLE_DOCS_FOLDER}/${data.plate_number || 'unknown'}/${key}_${Date.now()}.jpg`;
+          const { error: upErr } = await sb.storage.from(STORAGE_BUCKET).upload(path, blob, { contentType:'image/jpeg', upsert:true });
+          if(upErr) throw upErr;
+          data['photo_' + (key === 'license' ? 'license_url' : key === 'registration' ? 'registration_url' : 'tax_url')] = path;
+        }
+      }
+    } catch(e){
+      UI.showLoading(false); btn.disabled = false;
+      UI.toast('อัปโหลดรูปไม่สำเร็จ: ' + e.message, 'err');
+      return;
+    }
+
     const { error } = id
       ? await sb.from('vehicles').update({ ...data, updated_at: new Date().toISOString() }).eq('id', id)
       : await sb.from('vehicles').insert({ ...data, created_by: App.user.id });
-    UI.showLoading(false);
+
+    UI.showLoading(false); btn.disabled = false;
     if(error){ UI.toast('บันทึกไม่สำเร็จ: ' + error.message, 'err'); return; }
     UI.toast('บันทึกสำเร็จ','ok');
     UI.closeModal();
@@ -2181,7 +2284,7 @@ const Vehicles = {
   },
 
   async remove(id){
-    if(!confirm('ต้องการลบข้อมูลรถคันนี้ใช่หรือไม่?')) return;
+    if(!confirm('ต้องการลบข้อมูลนี้ใช่หรือไม่?')) return;
     UI.showLoading(true);
     const { error } = await sb.from('vehicles').delete().eq('id', id);
     UI.showLoading(false);
@@ -2189,16 +2292,18 @@ const Vehicles = {
     this.search();
   },
 
-  /* ── นำเข้าข้อมูลจาก Google Sheet (คัดลอก-วางหลายแถวพร้อมกัน) ──
-     รูปแบบที่รับ (คั่นด้วย Tab เหมือนคัดลอกจาก Google Sheets มาโดยตรง):
-     ประเภท(รถยนต์/รถจักรยานยนต์) | ทะเบียน | จังหวัด | ชื่อเจ้าของ |
-     ประเภทเจ้าของ | หน่วยงาน | วันหมดอายุภาษี | วันหมดอายุประกัน | หมายเหตุ */
+  /* ── นำเข้าจาก Google Sheet — คอลัมน์เรียงตามฟอร์มจริงเป๊ะๆ (19 คอลัมน์) ──
+     0:ประทับเวลา(ข้าม) 1:ยินยอมPDPA(ข้าม) 2:สถานะพนักงาน 3:รหัสพนักงาน
+     4:ชื่อ-นามสกุล 5:เบอร์โทร 6:โรงงาน 7:แผนก 8:วิธีเดินทาง
+     9:ประเภทรถ 10:ยี่ห้อรถ 11:ทะเบียนรถ 12:วันหมดอายุพรบ/ภาษี
+     13:เอกสารเกี่ยวกับรถ 14:รูปใบขับขี่ 15:รูปทะเบียนรถ 16:รูปพรบ/ภาษี
+     17:Column19(ข้าม) 18:คอลัมน์1(ข้าม) */
   openImport(){
-    document.getElementById('modalRoot').innerHTML = `<div class="modal-bg"><div class="modal" style="max-width:720px;">
-      <div class="modal-head"><h3>📥 นำเข้าข้อมูลรถจาก Google Sheet</h3><button class="modal-close" onclick="UI.closeModal()">✕</button></div>
+    document.getElementById('modalRoot').innerHTML = `<div class="modal-bg"><div class="modal" style="max-width:760px;">
+      <div class="modal-head"><h3>📥 นำเข้าข้อมูลจาก Google Sheet</h3><button class="modal-close" onclick="UI.closeModal()">✕</button></div>
       <p class="hint" style="margin-bottom:8px;">
-        เปิด Google Sheet ของคุณ → เลือก+คัดลอกแถวข้อมูล (Ctrl+C) → มาวางในช่องด้านล่าง (Ctrl+V)<br>
-        เรียงคอลัมน์ตามนี้: <b>ประเภท(รถยนต์/รถจักรยานยนต์) | ทะเบียน | จังหวัด | ชื่อเจ้าของ | ประเภทเจ้าของ | หน่วยงาน | วันหมดอายุภาษี | วันหมดอายุประกัน | หมายเหตุ</b><br>
+        ไปที่ Google Sheet ต้นฉบับ (ที่เชื่อมกับฟอร์ม) → เลือกทั้งแถวข้อมูล (ไม่รวมหัวตาราง) → คัดลอก (Ctrl+C) → มาวางที่นี่ (Ctrl+V)<br>
+        ระบบรองรับคอลัมน์ตามลำดับฟอร์มจริงของบริษัทอยู่แล้ว ไม่ต้องสลับคอลัมน์เอง<br>
         วันที่รองรับ 2 แบบ: <code>2026-08-23</code> หรือ <code>23/08/2569</code> (พ.ศ. ก็ได้) — เว้นว่างได้ถ้าไม่มีข้อมูล
       </p>
       <textarea id="vh_importText" rows="8" placeholder="วางข้อมูลจาก Google Sheet ที่นี่..." style="width:100%;font-family:monospace;font-size:12.5px;"></textarea>
@@ -2223,24 +2328,35 @@ const Vehicles = {
     const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
     const rows = [];
     lines.forEach((line, i) => {
-      const cols = line.split('\t');
-      const typeRaw = (cols[0] || '').trim();
-      const vehicle_type = /จักรยานยนต์|มอเตอร์ไซค์|motorcycle/i.test(typeRaw) ? 'motorcycle' : 'car';
-      const plate_number = (cols[1] || '').trim();
-      const plate_province = (cols[2] || '').trim();
-      const owner_name = (cols[3] || '').trim();
-      const owner_type = (cols[4] || '').trim();
-      const department = (cols[5] || '').trim();
-      const taxRaw = this.parseFlexibleDate(cols[6]);
-      const insRaw = this.parseFlexibleDate(cols[7]);
-      const notes = (cols[8] || '').trim();
-      const hasError = !plate_number || taxRaw === 'invalid' || insRaw === 'invalid';
+      const c = line.split('\t');
+      // ✅ อ่านคอลัมน์ความยินยอม PDPA จริง (index 1) แทนการถือว่ายินยอมเสมอ
+      // ข้อความจริงจากฟอร์มมักเป็น "ให้ความยินยอม" / "ไม่ให้ความยินยอม" (มีเครื่องหมาย " ปนมาบ้างจาก Google Sheet)
+      const consentRaw = (c[1]||'').trim();
+      const consent_given = !/ไม่ให้|ปฏิเสธ|ไม่ยินยอม/.test(consentRaw);
+      const employee_status = (c[2]||'').trim();
+      const employee_code = (c[3]||'').trim();
+      const owner_name = (c[4]||'').trim();
+      const phone = (c[5]||'').trim();
+      const factory_site = (c[6]||'').trim();
+      const department = (c[7]||'').trim();
+      const commute_method = (c[8]||'').trim();
+      const vehicle_type = (c[9]||'').trim();
+      const vehicle_brand = (c[10]||'').trim();
+      const plate_number = (c[11]||'').trim();
+      const docExpiryRaw = this.parseFlexibleDate(c[12]);
+      const documents_note = (c[13]||'').trim();
+      const photo_license_url = (c[14]||'').trim();
+      const photo_registration_url = (c[15]||'').trim();
+      const photo_tax_url = (c[16]||'').trim();
+
+      const hasError = !owner_name || !plate_number || docExpiryRaw === 'invalid';
       rows.push({
-        line: i + 1, vehicle_type, plate_number, plate_province, owner_name, owner_type, department,
-        tax_expiry: taxRaw === 'invalid' ? null : taxRaw,
-        insurance_expiry: insRaw === 'invalid' ? null : insRaw,
-        notes, hasError,
-        errorReason: !plate_number ? 'ไม่มีเลขทะเบียน' : (taxRaw==='invalid'||insRaw==='invalid') ? 'รูปแบบวันที่ไม่ถูกต้อง' : ''
+        line: i+1, consent_given, employee_status, employee_code, owner_name, phone, factory_site, department, commute_method,
+        vehicle_type, vehicle_brand, plate_number,
+        doc_expiry: docExpiryRaw === 'invalid' ? null : docExpiryRaw,
+        documents_note, photo_license_url, photo_registration_url, photo_tax_url,
+        hasError,
+        errorReason: !owner_name ? 'ไม่มีชื่อ' : !plate_number ? 'ไม่มีทะเบียนรถ' : 'รูปแบบวันที่ไม่ถูกต้อง'
       });
     });
     this._parsedRows = rows;
@@ -2250,10 +2366,11 @@ const Vehicles = {
     document.getElementById('vh_importPreviewBox').innerHTML = `
       <p class="hint" style="margin:10px 0 4px;">พบ ${rows.length} แถว — พร้อมนำเข้า ${okCount} แถว ${errCount>0 ? ', มีปัญหา ' + errCount + ' แถว (แถวสีแดงจะถูกข้าม)' : ''}</p>
       <div class="vh-import-preview"><table>
-        <thead><tr><th>#</th><th>ประเภท</th><th>ทะเบียน</th><th>เจ้าของ</th><th>ภาษี</th><th>ประกัน</th><th>สถานะ</th></tr></thead>
+        <thead><tr><th>#</th><th>ชื่อ</th><th>รหัสพนักงาน</th><th>ทะเบียน</th><th>ประเภทรถ</th><th>พรบ./ภาษี</th><th>ยินยอม PDPA</th><th>สถานะ</th></tr></thead>
         <tbody>${rows.map(r => `<tr class="${r.hasError?'row-error':''}">
-          <td>${r.line}</td><td>${this.typeIcon(r.vehicle_type)}</td><td>${UI.esc(r.plate_number)||'-'}</td>
-          <td>${UI.esc(r.owner_name)||'-'}</td><td>${r.tax_expiry||'-'}</td><td>${r.insurance_expiry||'-'}</td>
+          <td>${r.line}</td><td>${UI.esc(r.owner_name)||'-'}</td><td>${UI.esc(r.employee_code)||'-'}</td>
+          <td>${UI.esc(r.plate_number)||'-'}</td><td>${UI.esc(r.vehicle_type)||'-'}</td><td>${r.doc_expiry||'-'}</td>
+          <td>${r.consent_given ? '✅ ให้' : '⛔ ไม่ให้'}</td>
           <td>${r.hasError ? '⛔ ' + r.errorReason : '✅'}</td></tr>`).join('')}</tbody>
       </table></div>
       <button class="btn btn-primary btn-block" style="margin-top:12px;" onclick="Vehicles.confirmImport()" ${okCount===0?'disabled':''}>
@@ -2263,10 +2380,12 @@ const Vehicles = {
 
   async confirmImport(){
     const rows = this._parsedRows.filter(r => !r.hasError).map(r => ({
-      vehicle_type: r.vehicle_type, plate_number: r.plate_number, plate_province: r.plate_province,
-      owner_name: r.owner_name, owner_type: r.owner_type, department: r.department,
-      tax_expiry: r.tax_expiry, insurance_expiry: r.insurance_expiry, notes: r.notes,
-      status: 'active', created_by: App.user.id
+      employee_status: r.employee_status, employee_code: r.employee_code, owner_name: r.owner_name,
+      phone: r.phone, factory_site: r.factory_site, department: r.department, commute_method: r.commute_method,
+      vehicle_type: r.vehicle_type, vehicle_brand: r.vehicle_brand, plate_number: r.plate_number,
+      doc_expiry: r.doc_expiry, documents_note: r.documents_note,
+      photo_license_url: r.photo_license_url, photo_registration_url: r.photo_registration_url, photo_tax_url: r.photo_tax_url,
+      consent_given: r.consent_given, status: 'active', created_by: App.user.id
     }));
     if(!rows.length) return;
     UI.showLoading(true);
