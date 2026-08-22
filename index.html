@@ -14,7 +14,7 @@
   ═══════════════════════════════════════════════════════════════
 -->
 <script>
-  const SUPABASE_URL = 'https://cgsjuuvxllzbabqaodpm.supabase.co/rest/v1/'; // 🔧 แก้ตรงนี้
+  const SUPABASE_URL = 'https://cgsjuuvxllzbabqaodpm.supabase.co/rest/v1'; // 🔧 แก้ตรงนี้
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNnc2p1dXZ4bGx6YmFicWFvZHBtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc0MTQzNTAsImV4cCI6MjEwMjk5MDM1MH0.fON-1FNwUMNr7NgQW75hf8SYHJ78gE7_lJizokmT8kg'; // 🔧 แก้ตรงนี้
   const EMAIL_DOMAIN = 'rph.internal'; // ใช้แปลง username -> อีเมลปลอมสำหรับ Supabase Auth
   const STORAGE_BUCKET = 'report-images';
@@ -679,7 +679,7 @@ table.data-table td{padding:9px 6px; border-bottom:1px solid var(--border); vert
 /* ================================================================
    SUPABASE CLIENT
 ================================================================ */
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 function usernameToEmail(username){
   return String(username || '').trim().toLowerCase().replace(/[^a-z0-9._-]/g,'') + '@' + EMAIL_DOMAIN;
@@ -762,7 +762,7 @@ const Auth = {
     document.getElementById('loginForm').addEventListener('submit', e=>{ e.preventDefault(); Auth.login(); });
 
     // ฟังการเปลี่ยนแปลงสถานะ login/logout ตลอดเวลา (รวมถึงตอนเปิดหน้าเว็บครั้งแรก)
-    supabase.auth.onAuthStateChange((event, session) => {
+    sb.auth.onAuthStateChange((event, session) => {
       if(event === 'SIGNED_OUT'){
         App.user = null;
         Router.go('login');
@@ -770,7 +770,7 @@ const Auth = {
     });
 
     UI.showLoading(true);
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
+    sb.auth.getSession().then(async ({ data: { session } }) => {
       if(session){
         await Auth.loadProfileAndEnter(session.user.id);
       } else {
@@ -791,12 +791,12 @@ const Auth = {
 
     if(error || !profile){
       UI.toast('ไม่พบข้อมูลผู้ใช้ กรุณาเข้าสู่ระบบใหม่','err');
-      await supabase.auth.signOut();
+      await sb.auth.signOut();
       return;
     }
     if(profile.status !== 'active'){
       UI.toast('บัญชีนี้ถูกระงับการใช้งาน กรุณาติดต่อผู้ดูแลระบบ','err');
-      await supabase.auth.signOut();
+      await sb.auth.signOut();
       return;
     }
 
@@ -815,7 +815,7 @@ const Auth = {
     btn.disabled = true; btn.textContent = 'กำลังเข้าสู่ระบบ...';
     UI.showLoading(true);
 
-    const { data, error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await sb.auth.signInWithPassword({
       email: usernameToEmail(u),
       password: p
     });
@@ -835,12 +835,12 @@ const Auth = {
     await Auth.loadProfileAndEnter(data.user.id);
 
     // อัปเดตเวลา login ล่าสุด (ไม่ต้องรอผลลัพธ์)
-    supabase.from('profiles').update({ last_login: new Date().toISOString() }).eq('id', data.user.id).then(()=>{});
+    sb.from('profiles').update({ last_login: new Date().toISOString() }).eq('id', data.user.id).then(()=>{});
   },
 
   async logout(){
     UI.showLoading(true);
-    await supabase.auth.signOut();
+    await sb.auth.signOut();
     UI.showLoading(false);
     Router.go('login');
   }
@@ -851,7 +851,7 @@ const Auth = {
 ================================================================ */
 const Config = {
   async load(){
-    const { data, error } = await supabase.from('config').select('key, value');
+    const { data, error } = await sb.from('config').select('key, value');
     if(error){ UI.toast('โหลดการตั้งค่าไม่สำเร็จ: ' + error.message, 'err'); return; }
     const cfg = {};
     (data||[]).forEach(row => { cfg[row.key] = row.value; });
@@ -882,7 +882,7 @@ const Dashboard = {
     UI.showLoading(true);
 
     // เรียก RPC ที่สร้างไว้ในขั้นตอนที่ 4 (get_dashboard_stats)
-    const { data: stats, error: statsErr } = await supabase.rpc('get_dashboard_stats');
+    const { data: stats, error: statsErr } = await sb.rpc('get_dashboard_stats');
 
     // เช็ครายงานวันนี้ของกะปัจจุบัน (แทนของเดิมที่ getReports แล้วกรองฝั่ง client)
     const { data: todayReports, error: todayErr } = await supabase
@@ -1148,7 +1148,7 @@ const ImgUp = {
       const blob = await dataUrlToBlob(entry.dataUrl);
       const dateVal = document.getElementById('rf_date').value || Dashboard.todayStr();
       const path = `${CATEGORY_GENERAL}/${dateVal}/${entry.id}.jpg`;
-      const { error } = await supabase.storage.from(STORAGE_BUCKET).upload(path, blob, {
+      const { error } = await sb.storage.from(STORAGE_BUCKET).upload(path, blob, {
         contentType: 'image/jpeg', upsert: false
       });
       if(error) throw error;
@@ -1165,7 +1165,7 @@ const ImgUp = {
     const it = this.items[idx];
     this.items.splice(idx,1);
     this.render();
-    if(it.path) await supabase.storage.from(STORAGE_BUCKET).remove([it.path]);
+    if(it.path) await sb.storage.from(STORAGE_BUCKET).remove([it.path]);
   },
   getPaths(){ return this.items.filter(i => i.status==='done').map(i => i.path); },
   isBusy(){ return this.items.some(i => i.status==='uploading' || i.status==='compressing'); },
@@ -1183,7 +1183,7 @@ const ImgUp = {
 // helper: แปลง storage path -> public URL (ใช้ตอนแสดงรูปใน Part 3)
 function storagePathToPublicUrl(path){
   if(!path) return '';
-  const { data } = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(path);
+  const { data } = sb.storage.from(STORAGE_BUCKET).getPublicUrl(path);
   return data.publicUrl;
 }
 
@@ -1259,8 +1259,8 @@ const Report = {
     UI.showLoading(true);
 
     const query = this.editingId
-      ? supabase.from('reports').update(data).eq('id', this.editingId)
-      : supabase.from('reports').insert(data);
+      ? sb.from('reports').update(data).eq('id', this.editingId)
+      : sb.from('reports').insert(data);
     const { error } = await query;
 
     UI.showLoading(false); btn.disabled = false;
@@ -1268,7 +1268,7 @@ const Report = {
     if(error){ UI.toast('บันทึกไม่สำเร็จ: ' + error.message, 'err'); return; }
 
     UI.toast(this.editingId ? 'บันทึกการแก้ไขสำเร็จ' : 'บันทึกรายงานสำเร็จ', 'ok');
-    supabase.from('logs').insert({
+    sb.from('logs').insert({
       user_id: App.user.id,
       action: this.editingId ? 'UPDATE_REPORT' : 'CREATE_REPORT',
       detail: this.editingId ? ('แก้ไขรายงาน: ' + this.editingId) : 'สร้างรายงานใหม่'
@@ -1323,7 +1323,7 @@ const ReportList = {
     box.innerHTML = `<div class="empty-state"><div class="ic">⏳</div><p>กำลังโหลดรายการ...</p></div>`;
     UI.showLoading(true);
 
-    let q = supabase.from('reports').select('*');
+    let q = sb.from('reports').select('*');
     // ✅ ถ้าไม่ใช่ admin ไม่จำเป็นต้องกรอง officer_id เองด้วยซ้ำ — RLS จะกรองให้อัตโนมัติ
     // (แต่ query ที่ระบุเงื่อนไขชัดเจนก็ยังทำงานถูกต้องเหมือนเดิม เพราะ RLS ครอบอยู่ชั้นล่างสุด)
 
@@ -1466,7 +1466,7 @@ const ReportList = {
   async remove(id){
     if(!confirm('ต้องการลบรายงานนี้ใช่หรือไม่?')) return;
     UI.showLoading(true);
-    const { error } = await supabase.from('reports').delete().eq('id', id);
+    const { error } = await sb.from('reports').delete().eq('id', id);
     UI.showLoading(false);
     if(error){ UI.toast('ลบไม่สำเร็จ: ' + error.message, 'err'); return; }
     UI.toast('ลบรายงานสำเร็จ','ok');
@@ -1478,7 +1478,7 @@ const ReportList = {
     const ids = Array.from(this.selected);
     if(!confirm('ต้องการลบรายงานที่เลือกทั้งหมด ' + ids.length + ' รายการใช่หรือไม่? การลบไม่สามารถย้อนกลับได้')) return;
     UI.showLoading(true);
-    const { data, error } = await supabase.rpc('delete_selected_reports', { report_ids: ids });
+    const { data, error } = await sb.rpc('delete_selected_reports', { report_ids: ids });
     UI.showLoading(false);
     if(error){ UI.toast('ลบไม่สำเร็จ: ' + error.message, 'err'); return; }
     UI.toast('ลบรายงานสำเร็จ ' + data + ' รายการ','ok');
@@ -1563,7 +1563,7 @@ const Users = {
   all: [],
   async load(){
     UI.showLoading(true);
-    const { data, error } = await supabase.from('profiles').select('*').order('created_at', { ascending:true });
+    const { data, error } = await sb.from('profiles').select('*').order('created_at', { ascending:true });
     UI.showLoading(false);
     if(error){ UI.toast('โหลดผู้ใช้ไม่สำเร็จ: ' + error.message, 'err'); return; }
     this.all = data || [];
@@ -1608,7 +1608,7 @@ const Users = {
     const role = document.getElementById('uf_role').value;
     if(!fullname){ UI.toast('กรุณากรอกชื่อ-นามสกุล','err'); return; }
     UI.showLoading(true);
-    const { error } = await supabase.from('profiles').update({ fullname, position, role }).eq('id', userId);
+    const { error } = await sb.from('profiles').update({ fullname, position, role }).eq('id', userId);
     UI.showLoading(false);
     if(error){ UI.toast('แก้ไขไม่สำเร็จ: ' + error.message, 'err'); return; }
     UI.toast('แก้ไขผู้ใช้สำเร็จ','ok');
@@ -1622,7 +1622,7 @@ const Users = {
     if(id === App.user.id){ UI.toast('ไม่สามารถเปลี่ยนสถานะบัญชีตัวเองได้','err'); return; }
     const next = currentStatus === 'active' ? 'inactive' : 'active';
     UI.showLoading(true);
-    const { error } = await supabase.from('profiles').update({ status: next }).eq('id', id);
+    const { error } = await sb.from('profiles').update({ status: next }).eq('id', id);
     UI.showLoading(false);
     if(error){ UI.toast('เปลี่ยนสถานะไม่สำเร็จ: ' + error.message, 'err'); return; }
     this.load();
@@ -1686,7 +1686,7 @@ const Settings = {
     UI.showLoading(true);
     // upsert ทีละคีย์ (ตาราง config เป็น key-value)
     const rows = Object.entries(payload).map(([key, value]) => ({ key, value }));
-    const { error } = await supabase.from('config').upsert(rows, { onConflict: 'key' });
+    const { error } = await sb.from('config').upsert(rows, { onConflict: 'key' });
     UI.showLoading(false);
     if(error){ UI.toast('บันทึกไม่สำเร็จ: ' + error.message, 'err'); return; }
     UI.toast('บันทึกการตั้งค่าสำเร็จ','ok');
@@ -1695,7 +1695,7 @@ const Settings = {
   async cleanupNow(){
     if(!confirm('ต้องการลบรายงานที่ส่งอีเมลแล้วและ Log ที่เก่ากว่า 30 วันตอนนี้เลยหรือไม่?')) return;
     UI.showLoading(true);
-    const { data, error } = await supabase.rpc('cleanup_old_reports');
+    const { data, error } = await sb.rpc('cleanup_old_reports');
     UI.showLoading(false);
     if(error){ UI.toast('ล้างข้อมูลไม่สำเร็จ: ' + error.message, 'err'); return; }
     UI.toast('ล้างข้อมูลสำเร็จ: ลบรายงาน ' + data.deletedReports + ' รายการ, ลบ Log ' + data.deletedLogs + ' รายการ', 'ok');
@@ -1773,7 +1773,7 @@ function createBatchUploader(cfg){
       if(!this.items.length) return;
       if(!confirm('ล้างรูปทั้งหมดและเริ่มชุดใหม่ใช่หรือไม่?')) return;
       const paths = this.items.filter(i=>i.path).map(i=>i.path);
-      if(paths.length) supabase.storage.from(STORAGE_BUCKET).remove(paths);
+      if(paths.length) sb.storage.from(STORAGE_BUCKET).remove(paths);
       this.items = []; this.render(); this.updateProgress();
       UI.toast('เริ่มชุดใหม่แล้ว', 'info');
     },
@@ -1809,7 +1809,7 @@ function createBatchUploader(cfg){
           const dateVal = document.getElementById(cfg.ids.date).value || Dashboard.todayStr();
           const path = `${cfg.category}/${dateVal}/${entry.id}.jpg`;
           dataUrlToBlob(entry.dataUrl).then(blob =>
-            supabase.storage.from(STORAGE_BUCKET).upload(path, blob, { contentType:'image/jpeg', upsert:false })
+            sb.storage.from(STORAGE_BUCKET).upload(path, blob, { contentType:'image/jpeg', upsert:false })
           ).then(({ error }) => {
             if(error) throw error;
             entry.status = 'done'; entry.progress = 100; entry.path = path;
@@ -1830,7 +1830,7 @@ function createBatchUploader(cfg){
       const it = this.items[idx];
       this.items.splice(idx,1);
       this.render(); this.updateProgress();
-      if(it.path) await supabase.storage.from(STORAGE_BUCKET).remove([it.path]);
+      if(it.path) await sb.storage.from(STORAGE_BUCKET).remove([it.path]);
     },
     isBusy(){ return this.items.some(i => i.status==='uploading' || i.status==='compressing'); },
     getDonePaths(){ return this.items.filter(i => i.status==='done').map(i => i.path); },
@@ -1887,12 +1887,12 @@ function createBatchUploader(cfg){
       const btn = document.getElementById(cfg.ids.saveBtn);
       btn.disabled = true;
       UI.showLoading(true);
-      const { data: inserted, error } = await supabase.from('reports').insert(data).select('id').single();
+      const { data: inserted, error } = await sb.from('reports').insert(data).select('id').single();
       UI.showLoading(false);
 
       if(error){ UI.toast('บันทึกไม่สำเร็จ: ' + error.message, 'err'); btn.disabled = false; return; }
 
-      supabase.from('logs').insert({ user_id: App.user.id, action: cfg.logAction, detail: 'บันทึก'+cfg.typeLabel+' '+paths.length+' รูป' }).then(()=>{});
+      sb.from('logs').insert({ user_id: App.user.id, action: cfg.logAction, detail: 'บันทึก'+cfg.typeLabel+' '+paths.length+' รูป' }).then(()=>{});
 
       if(sendEmail){
         EmailService.sendReport(inserted.id);
